@@ -2,7 +2,7 @@
 let currentDate = new Date();
 let data = JSON.parse(localStorage.getItem('calendarData')) || {};
 let currentView = 'calendar';
-const sportsList = ["Abdominales", "Boxeo", "Futbol", "Natación", "Padel", "Tenis"];
+const sportsList = ["Abdominales", "Boxeo", "Futbol","Cardio", "Natación", "Padel", "Tenis"];
 
 // Elementos del DOM
 const elements = {
@@ -373,4 +373,5 @@ document.addEventListener('DOMContentLoaded', init);
 window.toggleButton = toggleButton;
 window.setFood = setFood;
 window.addSport = addSport;
+
 window.removeSport = removeSport;
