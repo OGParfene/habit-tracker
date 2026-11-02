@@ -4,9 +4,10 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite --host 0.0.0.0 --open /app.html",
     "build": "vite build --base=./ && node scripts/cache-build.js",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "build:pages": "npm run build && node scripts/publish-static.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0"

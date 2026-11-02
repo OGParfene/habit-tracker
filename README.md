@@ -28,11 +28,11 @@ npm run test:browser
 npm run build
 ```
 
-La aplicación compilada está en `dist/`. Se debe servir por HTTP(S); abrir `index.html` directamente no ejecuta los módulos. Las rutas relativas permiten desplegar en `/habit-tracker/`.
+Para desarrollo, abre `/app.html`. La aplicación compilada está en `dist/`. Se debe servir por HTTP(S); abrir `index.html` directamente no ejecuta los módulos. Las rutas relativas permiten desplegar en `/habit-tracker/`.
 
 ## Publicación en GitHub Pages
 
-En Settings → Pages → Build and deployment, seleccionar **GitHub Actions**. El workflow `.github/workflows/pages.yml` ejecuta los tests y compila/publica `dist/` en los pushes a `main`. La página anterior puede seguir publicada hasta que se integre esta rama y termine el primer despliegue.
+Se mantiene Pages en **Deploy from a branch → main → / (root)**. El workflow `.github/workflows/pages.yml` ejecuta los tests y compila en los pushes a `main`. El sitio existente usa `main` y la raíz del repositorio. `app.html` es la plantilla fuente; `index.html`, `assets/`, `sw.js`, `cloud-config.json`, `icon.svg` y `manifest.webmanifest` son archivos compilados. No editar los compilados manualmente. El workflow los actualiza con `npm run build:pages` y un commit automático.
 
 ## Supabase (opcional)
 

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f8f9f5" />
+    <meta
+      name="description"
+      content="Tus hábitos, a tu ritmo. Registra tu día y descubre tu progreso."
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>A tu ritmo · Hábitos</title>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <a class="brand" href="#today"
+          ><span class="brand-icon">↗</span
+          ><span>A tu ritmo<small>UN POCO, CADA DÍA</small></span></a
+        >
+        <nav aria-label="Navegación principal">
+          <button data-view="today">◉ <span>Hoy</span></button
+          ><button data-view="history">▦ <span>Historial</span></button
+          ><button data-view="progress">▥ <span>Progreso</span></button
+          ><button data-view="settings">⚙ <span>Ajustes</span></button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="plant">✳</div>
+          <p>La constancia también<br />incluye volver.</p>
+          <span id="sync-status" role="status"
+            >Guardado en este dispositivo</span
+          >
+        </div>
+      </aside>
+      <main id="main" tabindex="-1"></main>
+    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <dialog id="detail">
+      <div id="detail-content"></div>
+      <button class="secondary" id="close-dialog">Cerrar</button>
+    </dialog>
+    <script type="module" src="./script.js"></script>
+  </body>
+</html>
