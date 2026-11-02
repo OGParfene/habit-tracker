@@ -1,64 +1,46 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Hábitos</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body class="max-w-7xl mx-auto p-4 md:p-6">
-    <!-- Header -->
-    <header class="mb-6">
-        <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-1">Mis Hábitos</h1>
-        <div class="flex justify-between items-center mb-4">
-            <button id="prev-month" class="nav-button p-2 text-gray-600 hover:text-gray-900">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-            </button>
-            <h2 id="month-title" class="text-xl md:text-2xl font-semibold text-gray-700"></h2>
-            <button id="next-month" class="nav-button p-2 text-gray-600 hover:text-gray-900">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f8f9f5" />
+    <meta
+      name="description"
+      content="Tus hábitos, a tu ritmo. Registra tu día y descubre tu progreso."
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>A tu ritmo · Hábitos</title>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <a class="brand" href="#today"
+          ><span class="brand-icon">↗</span
+          ><span>A tu ritmo<small>UN POCO, CADA DÍA</small></span></a
+        >
+        <nav aria-label="Navegación principal">
+          <button data-view="today">◉ <span>Hoy</span></button
+          ><button data-view="history">▦ <span>Historial</span></button
+          ><button data-view="progress">▥ <span>Progreso</span></button
+          ><button data-view="settings">⚙ <span>Ajustes</span></button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="plant">✳</div>
+          <p>La constancia también<br />incluye volver.</p>
+          <span id="sync-status" role="status"
+            >Guardado en este dispositivo</span
+          >
         </div>
-        <div id="current-date" class="text-center text-gray-500 mb-6"></div>
-    </header>
-
-    <!-- Vista Calendario -->
-    <div id="calendar-view">
-        <div class="grid grid-cols-7 gap-2 mb-2 hidden md:grid">
-            <div class="text-center text-sm font-medium text-gray-500">Lunes</div>
-            <div class="text-center text-sm font-medium text-gray-500">Martes</div>
-            <div class="text-center text-sm font-medium text-gray-500">Miércoles</div>
-            <div class="text-center text-sm font-medium text-gray-500">Jueves</div>
-            <div class="text-center text-sm font-medium text-gray-500">Viernes</div>
-            <div class="text-center text-sm font-medium text-gray-500">Sábado</div>
-            <div class="text-center text-sm font-medium text-gray-500">Domingo</div>
-        </div>
-        <div id="calendar-days" class="grid grid-cols-1 gap-3 md:grid-cols-7 md:gap-3"></div>
+      </aside>
+      <main id="main" tabindex="-1"></main>
     </div>
-
-    <!-- Vista Resumen -->
-    <div id="summary-view" class="hidden">
-        <div class="summary-card bg-white rounded-xl shadow-sm mb-6 p-6">
-            <h2 class="text-xl md:text-2xl font-bold mb-6 text-gray-800">Resumen Mensual</h2>
-            <div id="summary-activities"></div>
-        </div>
-        <button id="back-to-calendar" class="w-full py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors">
-            Volver al calendario
-        </button>
-    </div>
-
-    <!-- Botón flotante para resumen -->
-    <button id="toggle-view" class="fixed bottom-6 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors">
-        <svg id="toggle-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-    </button>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="script.js"></script>
-</body>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <dialog id="detail">
+      <div id="detail-content"></div>
+      <button class="secondary" id="close-dialog">Cerrar</button>
+    </dialog>
+    <script type="module" src="./script.js"></script>
+  </body>
 </html>
