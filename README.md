@@ -1,38 +1,62 @@
-# Mis Hábitos - Aplicación de Seguimiento de Hábitos
+# A tu ritmo · Habit tracker
 
-Una aplicación web sencilla para realizar un seguimiento de tus hábitos diarios como ejercicio, alimentación, lectura y más.
+Un espacio personal para registrar hábitos, retomar después de una pausa y entender el progreso. Interfaz en español, responsive y con funcionamiento sin conexión.
 
-## Características
+## Incluye
 
-- 📅 Visualización por calendario mensual
-- ✅ Seguimiento de hábitos diarios:
-  - 💪 Ejercicio
-  - 🧪 Creatina
-  - 👟 Pasos
-  - 📚 Lectura
-- 🍎 Registro de calidad de alimentación (Perfecto, Bien, Normal, Mal)
-- ⚽ Registro de deportes practicados
-- 📊 Resumen mensual con estadísticas
-- 📱 Diseño responsive para móviles y escritorio
-- 💾 Datos guardados localmente en el navegador
+- Hoy: registro con un toque, cantidades reales, avances parciales, descansos y deshacer.
+- Ejercicio con objetivo semanal, deporte y duración. Creatina, pasos, lectura y alimentación como hábitos iniciales editables.
+- Hábitos personalizados, objetivos diarios o semanales, archivo y cambios efectivos desde hoy conservando objetivos anteriores.
+- Historial editable de 14 días, selector para navegar a cualquier fecha pasada y notas diarias.
+- Progreso por 7/30/90/365 días, mapas de constancia, tendencias semanales, cobertura, rachas y acumulados.
+- Migración automática de `calendarData` sin borrar el original. Las cantidades históricas desconocidas no se inventan.
+- Exportación JSON y CSV, importación con combinación por fecha de modificación y descarga previa de una copia.
+- PWA instalable con recursos precargados para uso sin conexión.
+- Recordatorio diario descargable en formato ICS para el calendario.
+- Integración opcional con Supabase Auth y sincronización por registro con aislamiento por usuario.
 
-## Tecnologías utilizadas
+## Desarrollo
 
-- HTML5
-- CSS3 (con Tailwind CSS)
-- JavaScript Vanilla
+Requiere Node 22 o posterior.
 
-## Cómo usar
+```sh
+npm ci
+npm run dev
+npm test
+npx playwright install chromium
+npm run test:browser
+npm run build
+```
 
-1. Clona o descarga el repositorio
-2. Abre el archivo `index.html` en tu navegador
-3. Comienza a registrar tus hábitos diarios
+Para desarrollo, abre `/app.html`. La aplicación compilada está en `dist/`. Se debe servir por HTTP(S); abrir `index.html` directamente no ejecuta los módulos. Las rutas relativas permiten desplegar en `/habit-tracker/`.
 
-## Vista previa
+## Publicación en GitHub Pages
 
-![Vista de calendario](https://via.placeholder.com/400x600/3b82f6/ffffff?text=Calendario)
-![Vista de resumen](https://via.placeholder.com/400x600/10b981/ffffff?text=Resumen)
+Se mantiene Pages en **Deploy from a branch → main → / (root)**. El workflow `.github/workflows/pages.yml` ejecuta los tests y verifica los compilados en cada PR y push a `main`. El sitio existente usa `main` y la raíz del repositorio. `app.html` es la plantilla fuente; `index.html`, `assets/`, `sw.js`, `cloud-config.json`, `icon.svg` y `manifest.webmanifest` son archivos compilados. No editar los compilados manualmente. Antes de cada commit con cambios, ejecutar `npm run build:pages` e incluir los compilados. Pages publica el commit de `main` sin cambiar la configuración de hosting.
 
-## Licencia
+## Supabase (opcional)
 
-MIT License - Libre para uso y modificación
+La app funciona localmente si `public/cloud-config.json` tiene campos vacíos. Para activar sincronización:
+
+1. Crear un proyecto dedicado y revisar su coste antes de contratarlo.
+2. Ejecutar `supabase/schema.sql` en el proyecto. Contiene RLS y una función invoker: cada cuenta accede únicamente a sus filas. No se usan claves secretas en el navegador.
+3. En Auth → URL Configuration, establecer Site URL y Redirect URLs a `https://ogparfene.github.io/habit-tracker/` (y localhost solo para desarrollo).
+4. Configurar el envío de email de Supabase según las restricciones del plan. En producción conviene configurar SMTP propio; el proveedor por defecto limita destinatarios y volumen.
+5. Rellenar `public/cloud-config.json` con `url` y `publishableKey`. Esta clave es pública; nunca incluir `service_role` o secret keys.
+6. Compilar y desplegar. En Ajustes, iniciar sesión mediante enlace al correo. El historial sin cuenta se incorpora solo al pulsar «Incorporar historial local».
+
+Los registros se guardan en `rhythm-v2` sin cuenta y `rhythm-v2-<user-id>` con cuenta. Al salir se vuelve al historial local. Las modificaciones offline se sincronizan al volver la conexión o abrir la app. En conflictos del mismo registro gana la fecha de edición más reciente; el reloj del dispositivo debe ser correcto. Los borrados se sincronizan como tombstones. Dos dispositivos pueden editar hábitos o días distintos sin reemplazar el historial completo.
+
+## Interpretación de estadísticas
+
+- **Completado:** sí/no confirmado, cantidad igual o superior al objetivo, o valoración registrada. En alimentación, registrar una valoración no equivale a «comer bien».
+- **Parcial:** cantidad positiva por debajo del objetivo. No se considera fracaso ni cumplimiento completo.
+- **Sin registrar:** desconocido, diferente de «no realizado».
+- **Cobertura:** registros explícitos / días elegibles, excluidos descansos. Los desconocidos quedan en el denominador del cumplimiento, y se muestran aparte.
+- Los días futuros y anteriores a la creación del hábito no cuentan. Los descansos no rompen rachas diarias.
+- Los hábitos semanales muestran objetivos por semana; una semana actual incompleta no rompe una racha previa. Las semanas iniciales/parciales se identifican en el detalle.
+- Los datos históricos booleanos cuentan como completados sin añadir cantidades inventadas.
+
+## Límites
+
+Los recordatorios son eventos de calendario, no push de la web. No hay lectura automática de Apple Health/Google Fit. La sincronización requiere configurar y probar el proyecto Supabase y el correo. El almacenamiento local depende del navegador: exporta copias periódicas. La sincronización no elimina las copias ya descargadas o guardadas en otros dispositivos.
