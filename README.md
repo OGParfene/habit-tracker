@@ -32,7 +32,7 @@ Para desarrollo, abre `/app.html`. La aplicación compilada está en `dist/`. Se
 
 ## Publicación en GitHub Pages
 
-Se mantiene Pages en **Deploy from a branch → main → / (root)**. El workflow `.github/workflows/pages.yml` ejecuta los tests y compila en los pushes a `main`. El sitio existente usa `main` y la raíz del repositorio. `app.html` es la plantilla fuente; `index.html`, `assets/`, `sw.js`, `cloud-config.json`, `icon.svg` y `manifest.webmanifest` son archivos compilados. No editar los compilados manualmente. El workflow los actualiza con `npm run build:pages` y un commit automático.
+Se mantiene Pages en **Deploy from a branch → main → / (root)**. El workflow `.github/workflows/pages.yml` ejecuta los tests y verifica los compilados en cada PR y push a `main`. El sitio existente usa `main` y la raíz del repositorio. `app.html` es la plantilla fuente; `index.html`, `assets/`, `sw.js`, `cloud-config.json`, `icon.svg` y `manifest.webmanifest` son archivos compilados. No editar los compilados manualmente. Antes de cada commit con cambios, ejecutar `npm run build:pages` e incluir los compilados. Pages publica el commit de `main` sin cambiar la configuración de hosting.
 
 ## Supabase (opcional)
 

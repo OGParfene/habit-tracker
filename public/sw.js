@@ -1,13 +1,7 @@
 const CACHE = "rhythm-v2-1";
 const PRECACHE = ["./", "./icon.svg", "./manifest.webmanifest"];
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE)
-      .then((cache) =>
-        cache.addAll(PRECACHE),
-      ),
-  );
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
   self.skipWaiting();
 });
 self.addEventListener("activate", (event) => {

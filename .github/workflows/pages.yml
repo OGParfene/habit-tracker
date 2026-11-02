@@ -1,15 +1,13 @@
-name: Build static Pages
+name: Validate static Pages
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 permissions:
-  contents: write
-concurrency:
-  group: pages-build
-  cancel-in-progress: true
+  contents: read
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,12 +18,5 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build:pages
-      - name: Commit compiled site for branch-based Pages
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html assets icon.svg manifest.webmanifest sw.js cloud-config.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Update compiled habit tracker [skip ci]"
-            git push
-          fi
+      - name: Check compiled site is up to date
+        run: git diff --exit-code -- index.html assets icon.svg manifest.webmanifest sw.js cloud-config.json
