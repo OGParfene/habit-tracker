@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   habitReport,
+  habitChartData,
   exerciseSessions,
   withExerciseSessions,
   localDate,
@@ -220,4 +221,55 @@ test("workout report separates activities, days with activities, goal days and a
   assert.equal(r.activityDays, 1);
   assert.equal(r.done, 1);
   assert.equal(r.minutes, 45);
+});
+test("chart data distinguishes recorded zero from missing, legacy, and rest", () => {
+  const reading = defaults("2026-01-01")[3];
+  const rows = rowsOf({
+    "2026-01-01": { status: "miss", amount: 0 },
+    "2026-01-03": { status: "done", legacy: true },
+    "2026-01-04": { status: "rest" },
+  });
+  const chart = habitChartData(reading, rows, "2026-01-01", "2026-01-04");
+  assert.equal(chart.group, "day");
+  assert.deepEqual(
+    chart.points.map((p) => p.value),
+    [0, null, null, null],
+  );
+  assert.equal(chart.points[2].legacy, 1);
+  assert.equal(chart.points[3].rest, 1);
+});
+test("weekly and monthly charts sum only measured quantities inside the selected range", () => {
+  const reading = defaults("2026-01-01")[3];
+  const rows = rowsOf({
+    "2026-01-01": { status: "done", amount: 15 },
+    "2026-01-02": { status: "done", amount: 5 },
+    "2026-01-05": { status: "done", legacy: true },
+    "2026-02-02": { status: "done", amount: 30 },
+  });
+  const weekly = habitChartData(reading, rows, "2026-01-01", "2026-02-01");
+  assert.equal(weekly.group, "week");
+  assert.equal(
+    weekly.points.reduce((n, p) => n + (p.value || 0), 0),
+    20,
+  );
+  assert.equal(weekly.points[1].value, null);
+  assert.equal(weekly.points[0].target, null);
+  const yearly = habitChartData(reading, rows, "2026-01-01", "2026-06-01");
+  assert.equal(yearly.group, "month");
+  assert.equal(yearly.points[0].value, 20);
+  assert.equal(yearly.points[1].value, 30);
+  assert.equal(yearly.points[2].value, null);
+});
+test("exercise chart counts completed days once and only shows weekly goals for full active weeks", () => {
+  const exercise = defaults("2026-01-01")[0];
+  const e = withExerciseSessions({ status: "done" }, [
+    { id: "a", sport: "Fuerza", minutes: 30 },
+    { id: "b", sport: "Cardio", minutes: 15 },
+  ]);
+  const rows = { [recordKey("2026-01-02", "exercise")]: { value: e } };
+  const chart = habitChartData(exercise, rows, "2026-01-01", "2026-02-10");
+  assert.equal(chart.group, "week");
+  assert.equal(chart.points[0].value, 1);
+  assert.equal(chart.points[0].target, null);
+  assert.equal(chart.points[1].target, 3);
 });

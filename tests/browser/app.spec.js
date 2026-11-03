@@ -357,3 +357,63 @@ test("mobile form controls stay at least 16px without disabling manual zoom", as
     ),
   ).toBe(true);
 });
+test("charts respond to keyboard and taps, respect periods and retain missing measurements", async ({
+  page,
+}) => {
+  const rows = reportFixture();
+  const date = localDate();
+  rows[recordKey(date, "food")] = {
+    value: { status: "done", rating: 2 },
+    updatedAt: new Date().toISOString(),
+  };
+  await page.addInitScript(
+    (rows) => localStorage.setItem("rhythm-v2", JSON.stringify(rows)),
+    rows,
+  );
+  await page.goto("/#progress");
+  await expect(page.locator("main figure.habit-visual")).toHaveCount(5);
+  await page.getByRole("button", { name: "7 días", exact: true }).click();
+  const chart = page.locator('[data-progress-habit="reading"] .habit-visual');
+  await expect(chart).toHaveAttribute("data-group", "day");
+  const point = chart.locator(".chart-point").last();
+  await point.focus();
+  await point.press("Enter");
+  await expect(chart.locator(".chart-readout")).toContainText(
+    "15 min anotados",
+  );
+  const missing = chart.locator(".chart-point").first();
+  await missing.click();
+  await expect(chart.locator(".chart-readout")).toContainText(
+    "sin cantidad anotada",
+  );
+  await page
+    .locator('[data-progress-habit="food"] .rating-chart-legend button')
+    .nth(2)
+    .click();
+  await expect(
+    page.locator('[data-progress-habit="food"] .chart-readout'),
+  ).toContainText("Según lo previsto: 1 día de 1 valoración");
+  await page.getByRole("button", { name: "90 días", exact: true }).click();
+  await expect(
+    page.locator('[data-progress-habit="reading"] .habit-visual'),
+  ).toHaveAttribute("data-group", "week");
+  await page.locator('[data-progress-habit="reading"] [data-detail]').click();
+  const detail = page.locator("#detail-content .habit-visual");
+  await expect(detail).toHaveAttribute("data-group", "week");
+  await detail.locator(".chart-point").last().click();
+  await expect(detail.locator(".chart-readout")).toContainText(
+    "15 min anotados",
+  );
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page.getByRole("button", { name: "1 año", exact: true }).click();
+  // A recently created habit has only 61 active days; the chart labels the actual aggregation.
+  await expect(
+    page.locator('[data-progress-habit="reading"] .habit-visual'),
+  ).toHaveAttribute("data-group", "week");
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

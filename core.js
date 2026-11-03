@@ -401,3 +401,69 @@ export function habitReport(h, rows, from, to) {
     weekResults,
   };
 }
+
+// Chart buckets retain missing measurements as null; a recorded zero stays zero.
+export function habitChartData(h, rows, from, to) {
+  const allDays = dates(from, to),
+    group =
+      allDays.length <= 31 ? "day" : allDays.length <= 100 ? "week" : "month";
+  const grouped = new Map();
+  for (const date of allDays) {
+    const key =
+      group === "day"
+        ? date
+        : group === "week"
+          ? monday(date)
+          : date.slice(0, 7) + "-01";
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(date);
+  }
+  const points = [...grouped.values()].map((bucket) => {
+    const active = bucket
+      .map((date) => ({
+        date,
+        config: at(h, date),
+        value: entry(rows, date, h.id),
+      }))
+      .filter((r) => r.config && !r.config.archived);
+    const measured = active.filter(
+      (r) =>
+        r.value?.status !== "rest" &&
+        Number.isFinite(r.value?.amount) &&
+        !r.value.legacy,
+    );
+    const known = active.filter((r) => r.value);
+    const numeric = h.kind === "number",
+      value = numeric
+        ? measured.length
+          ? measured.reduce((n, r) => n + r.value.amount, 0)
+          : null
+        : known.length
+          ? active.filter((r) => achieved(r.config, r.value)).length
+          : null;
+    let target = null;
+    if (numeric && group === "day" && active.length)
+      target = active[0].config.target;
+    if (
+      !numeric &&
+      h.frequency === "weekly" &&
+      group === "week" &&
+      bucket.length === 7 &&
+      active.length === 7 &&
+      active.every((r) => r.config.frequency === "weekly")
+    )
+      target = active.at(-1).config.times;
+    return {
+      start: bucket[0],
+      end: bucket.at(-1),
+      value,
+      target,
+      days: active.length,
+      known: numeric ? measured.length : known.length,
+      missing: active.length - (numeric ? measured.length : known.length),
+      rest: active.filter((r) => r.value?.status === "rest").length,
+      legacy: active.filter((r) => r.value?.legacy).length,
+    };
+  });
+  return { group, unit: h.kind === "number" ? h.unit : "días", points };
+}
