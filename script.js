@@ -396,7 +396,9 @@ function bind() {
   });
   on("[data-status]", "click", (e) =>
     change(selected, e.currentTarget.dataset.id, {
-      ...entry(rows, selected, e.currentTarget.dataset.id),
+      ...(e.currentTarget.dataset.id === "exercise"
+        ? entry(rows, selected, "exercise")
+        : {}),
       status: e.currentTarget.dataset.status,
     }),
   );

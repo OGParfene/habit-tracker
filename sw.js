@@ -1,5 +1,5 @@
 const CACHE = "rhythm-v2-2";
-const PRECACHE = ["./","./icon.svg","./manifest.webmanifest","./assets/app-DPsA12DM.js","./assets/app-Tjn5qlM2.css","./assets/dist-CTOaXH3b.js"];
+const PRECACHE = ["./","./icon.svg","./manifest.webmanifest","./assets/app-BVNUXCF7.js","./assets/app-Tjn5qlM2.css","./assets/dist-CTOaXH3b.js"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
   self.skipWaiting();
