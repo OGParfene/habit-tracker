@@ -17,6 +17,7 @@ import {
   validateBackup,
   exerciseSessions,
   withExerciseSessions,
+  habitReport,
 } from "./core.js";
 const $ = (s) => document.querySelector(s),
   esc = (s) =>
@@ -44,6 +45,8 @@ let storageKey = "rhythm-v2",
   view = location.hash.slice(1) || "today",
   selected = today(),
   period = 30,
+  historyDate = today(),
+  editingHistory = false,
   undo = null,
   cloud = null,
   user = null,
@@ -109,6 +112,7 @@ function change(date, id, value) {
   const key = recordKey(date, id),
     previous = rows[key]?.value ?? null;
   if (put(key, value)) {
+    document.activeElement?.blur();
     undo = { key, previous };
     render();
     notify("Guardado", true);
@@ -133,6 +137,7 @@ function notify(message, canUndo = false) {
   );
 }
 function navigate(next) {
+  document.activeElement?.blur();
   view = ["today", "history", "progress", "settings"].includes(next)
     ? next
     : "today";
@@ -215,7 +220,7 @@ function todayView() {
     .sort()
     .at(-1);
   const returning = past && past < shift(today(), -3);
-  return `<div class="topline"><span>${esc(dateLabel(selected))}</span><span class="pill">A TU RITMO, SIN PRISAS</span></div><span class="eyebrow">TU ESPACIO DIARIO</span><h1>${selected !== today() ? "Un vistazo atrás." : returning ? "Qué bien volver a verte." : "Hoy también cuenta."}</h1><p class="subtitle">${returning ? "Retoma con un solo hábito. Tu progreso sigue aquí." : "Pequeñas acciones que, con el tiempo, lo cambian todo."}</p>${dateControls()}<div class="layout"><section><div class="hero"><div><span class="eyebrow">${selected === today() ? "TU DÍA" : "EL DÍA ELEGIDO"}</span><h2>${done === total && total ? "Has cumplido tus objetivos." : `${done} de ${total} hábitos completados`}</h2><p>${total === 0 ? "Hoy también puedes descansar." : done === total ? "Disfruta lo que has construido hoy." : "Cada pequeño paso suma."}</p></div><div class="ring" style="--p:${pct}"><span>${pct}%</span></div></div><div class="section-title"><h2>Tus hábitos</h2><small>${hs.length} hábitos · guardado automático</small></div>${hs.length ? hs.map(card).join("") : '<div class="empty">Añade tu primer hábito desde Ajustes.</div>'}</section><aside class="right-column"><div class="panel"><span class="eyebrow">PASO A PASO</span><h3 style="margin-top:9px">Esta semana</h3><div class="week-summary">${dates(
+  return `<div class="topline"><span>${esc(dateLabel(selected))}</span><span class="pill">A TU RITMO, SIN PRISAS</span></div><span class="eyebrow">TU ESPACIO DIARIO</span><h1>${selected !== today() ? "Un vistazo atrás." : returning ? "Qué bien volver a verte." : "Hoy también cuenta."}</h1><p class="subtitle">${returning ? "Retoma con un solo hábito. Tu progreso sigue aquí." : "Pequeñas acciones que, con el tiempo, lo cambian todo."}</p>${editingHistory ? `<div class="editing-banner"><span>Estás editando el ${esc(dateLabel(selected))}.</span><button class="text-button" data-back-history>Volver al historial</button></div>` : ""}${dateControls()}<div class="layout"><section><div class="hero"><div><span class="eyebrow">${selected === today() ? "TU DÍA" : "EL DÍA ELEGIDO"}</span><h2>${done === total && total ? "Has cumplido tus objetivos." : `${done} de ${total} hábitos completados`}</h2><p>${total === 0 ? "Hoy también puedes descansar." : done === total ? "Disfruta lo que has construido hoy." : "Cada pequeño paso suma."}</p></div><div class="ring" style="--p:${pct}"><span>${pct}%</span></div></div><div class="section-title"><h2>Tus hábitos</h2><small>${hs.length} hábitos · guardado automático</small></div>${hs.length ? hs.map(card).join("") : '<div class="empty">Añade tu primer hábito desde Ajustes.</div>'}</section><aside class="right-column"><div class="panel"><span class="eyebrow">PASO A PASO</span><h3 style="margin-top:9px">Esta semana</h3><div class="week-summary">${dates(
     monday(selected),
     shift(monday(selected), 6),
   )
@@ -244,76 +249,213 @@ function milestonePanel() {
     Math.ceil((total + 1) / 500) * 500;
   return `<div class="panel"><div class="milestone">✧</div><span class="eyebrow">LO QUE YA HAS CONSTRUIDO</span><p><span class="big-number">${number(total)}</span><br>hábitos completados</p><div class="bar"><i style="width:${Math.min(100, (total / next) * 100)}%"></i></div><span class="quiet">Próximo hito: ${number(next)} pequeños logros.</span></div>`;
 }
-function historyView() {
-  const hs = habits(),
-    start = shift(selected, -13);
-  return `<div class="topline"><span>TU RECORRIDO</span><span class="pill">CADA DÍA TIENE SU HISTORIA</span></div><h1>Todo lo que suma.</h1><p class="subtitle">Últimos 14 días hasta la fecha elegida. Toca un registro para editar ese día.</p>${dateControls()}<div class="history-table"><table><thead><tr><th>Día</th>${hs.map((h) => `<th>${esc(h.name)}</th>`).join("")}<th>Nota</th></tr></thead><tbody>${dates(
-    start,
-    selected,
-  )
-    .reverse()
-    .map(
-      (d) =>
-        `<tr><td><button data-date="${d}">${dateFrom(d).toLocaleDateString("es", { day: "numeric", month: "short" })}</button></td>${hs
-          .map((h) => {
-            const config = at(h, d);
-            const e = entry(rows, d, h.id),
-              s = config ? state(config, e) : "unknown";
-            return `<td><button data-date="${d}" title="${esc(h.name)}: ${s}" aria-label="Editar ${esc(h.name)} del ${d}">${s === "done" ? (e?.amount ? number(e.amount) : "✓") : s === "rest" ? "Descanso" : s === "partial" ? number(e.amount) : s === "miss" ? "No" : "—"}</button></td>`;
-          })
-          .join(
-            "",
-          )}<td>${esc((rows[`note/${d}`]?.value || "").slice(0, 60))}</td></tr>`,
-    )
-    .join(
-      "",
-    )}</tbody></table></div><div class="legend">✓ Completado · Cantidad: progreso real · — Sin registrar · No: no realizado</div>`;
+const ratingLabels = [
+  "Hoy fue diferente",
+  "En parte",
+  "Según lo previsto",
+  "Muy a gusto",
+];
+const shortDate = (d) =>
+  dateFrom(d).toLocaleDateString("es", { day: "numeric", month: "short" });
+function recordsOn(date) {
+  return habits().filter((h) => entry(rows, date, h.id));
 }
-function heatmap(h, start, end) {
-  const pad = (dateFrom(start).getDay() + 6) % 7;
-  return `<div class="heatmap" aria-label="Mapa de constancia de ${esc(h.name)}">${"<span></span>".repeat(pad)}${dates(
-    start,
-    end,
+function shiftMonth(date, n) {
+  const d = dateFrom(date),
+    first = new Date(d.getFullYear(), d.getMonth() + n, 1, 12),
+    last = new Date(first.getFullYear(), first.getMonth() + 1, 0, 12);
+  first.setDate(Math.min(d.getDate(), last.getDate()));
+  const result = localDate(first);
+  return result > today() ? today() : result;
+}
+function calendarMonth(
+  date,
+  {
+    habit = null,
+    from = null,
+    to = today(),
+    select = "history",
+    compact = false,
+  } = {},
+) {
+  const first = date.slice(0, 7) + "-01",
+    d = dateFrom(first),
+    last = localDate(new Date(d.getFullYear(), d.getMonth() + 1, 0, 12)),
+    padding = (d.getDay() + 6) % 7;
+  return `<div class="month-grid ${compact ? "compact-calendar" : ""}"><div class="calendar-weekdays">${["L", "M", "X", "J", "V", "S", "D"].map((day) => `<span aria-hidden="true">${day}</span>`).join("")}</div><div class="calendar-dates">${'<span class="calendar-spacer"></span>'.repeat(padding)}${dates(
+    first,
+    last,
   )
-    .map((d) => {
-      const config = at(h, d),
-        e = entry(rows, d, h.id),
-        s = d > today() ? "future" : config ? state(config, e) : "unknown";
-      return `<button class="${s}" data-date="${d}" title="${esc(dateLabel(d))}: ${s === "done" ? "completado" : s === "rest" ? "descanso" : s === "miss" ? "no realizado" : s === "partial" ? "parcial" : "sin registrar"}" aria-label="${esc(dateLabel(d))}: ${s}" ${d > today() ? "disabled" : ""}></button>`;
+    .map((day) => {
+      const config = habit ? at(habit, day) : null,
+        value = habit ? entry(rows, day, habit.id) : null;
+      const count = recordsOn(day).length,
+        hasNote = !!rows[`note/${day}`]?.value;
+      const outside =
+          day > to ||
+          (from && day < from) ||
+          (habit && (!config || config.archived)),
+        status = habit
+          ? !config || config.archived
+            ? "inactive"
+            : state(config, value)
+          : count || hasNote
+            ? "recorded"
+            : "unknown";
+      const label = habit
+        ? statusLabel(config, value)
+        : count
+          ? `${count} hábitos anotados`
+          : hasNote
+            ? "Con nota"
+            : "Sin registros";
+      return `<button class="calendar-day-button ${status} ${select === "history" && historyDate === day ? "chosen" : ""} ${day === today() ? "is-today" : ""}" ${outside ? "disabled" : ""} ${select === "history" ? `data-history-date="${day}"` : `data-date="${day}"`} aria-label="${esc(dateLabel(day))}: ${esc(label)}" ${select === "history" ? `aria-pressed="${historyDate === day}"` : ""}><span>${dateFrom(day).getDate()}</span><i aria-hidden="true">${habit ? (status === "done" ? "✓" : status === "partial" ? "◐" : status === "rest" ? "–" : status === "miss" ? "×" : "·") : count || hasNote ? "•" : ""}</i></button>`;
     })
-    .join(
-      "",
-    )}</div><div class="legend"><span><i></i>Completado</span><span><i class="blank"></i>Sin registrar</span><span><i class="miss"></i>No realizado</span><span><i class="rest"></i>Descanso</span></div>`;
+    .join("")}</div></div>`;
+}
+function statusLabel(h, e) {
+  if (!h) return "Hábito todavía no activo";
+  const st = state(h, e);
+  return {
+    unknown: "Sin registrar",
+    done: h.kind === "rating" ? "Valoración anotada" : "Objetivo cumplido",
+    partial: "Avance parcial",
+    rest: "Descanso",
+    miss: "No realizado",
+  }[st];
+}
+function historyValue(h, e) {
+  if (!e) return "Sin registrar";
+  const st = state(h, e);
+  if (st === "rest") return "Descanso";
+  if (st === "miss") return "No realizado";
+  if (h.id === "exercise") {
+    const sessions = exerciseSessions(e);
+    return sessions.length
+      ? `${sessions.map((session) => session.sport + (session.minutes !== null ? ` · ${number(session.minutes)} min` : "")).join(" / ")}`
+      : "Objetivo cumplido";
+  }
+  if (h.kind === "number")
+    return e.legacy
+      ? "Objetivo cumplido · cantidad no anotada"
+      : `${number(e.amount || 0)} ${h.unit} · ${st === "done" ? "objetivo cumplido" : `objetivo: ${number(h.target)}`}`;
+  if (h.kind === "rating")
+    return ratingLabels[e.rating] || "Valoración anotada";
+  return "Completado";
+}
+function historyView() {
+  const first = historyDate.slice(0, 7) + "-01",
+    month = dateFrom(first).toLocaleDateString("es", {
+      month: "long",
+      year: "numeric",
+    }),
+    end =
+      historyDate.slice(0, 7) === today().slice(0, 7)
+        ? today()
+        : localDate(
+            new Date(
+              dateFrom(first).getFullYear(),
+              dateFrom(first).getMonth() + 1,
+              0,
+              12,
+            ),
+          );
+  const recorded = dates(first, end).filter(
+    (day) => recordsOn(day).length || rows[`note/${day}`]?.value,
+  ).length;
+  const dayHabits = habits()
+    .map((h) => ({ h: at(h, historyDate), original: h }))
+    .filter(
+      ({ h, original }) =>
+        h && (!h.archived || entry(rows, historyDate, original.id)),
+    );
+  const note = rows[`note/${historyDate}`]?.value;
+  return `<div class="topline"><span>TU RECORRIDO</span></div><h1>Tu historial, día a día.</h1><p class="subtitle">Elige un día para ver lo que anotaste. Puedes corregirlo cuando lo necesites.</p><div class="history-layout"><section class="panel history-calendar" aria-label="Calendario del historial"><div class="month-navigation"><button class="small-btn" data-history-month="-1" aria-label="Mes anterior" ${first <= "1900-01-01" ? "disabled" : ""}>←</button><h2>${esc(month)}</h2><button class="small-btn" data-history-month="1" aria-label="Mes siguiente" ${first.slice(0, 7) >= today().slice(0, 7) ? "disabled" : ""}>→</button></div>${calendarMonth(historyDate)}<div class="calendar-key"><span><i></i>Con registros</span><span><i class="blank"></i>Sin registros</span></div><p class="quiet month-summary">${recorded} ${recorded === 1 ? "día con registros" : "días con registros"} este mes</p><button class="text-button" data-history-today>Volver a hoy</button></section><section class="panel day-detail" aria-label="Detalle del día"><div class="section-title"><div><span class="eyebrow">${historyDate === today() ? "HOY" : "DÍA SELECCIONADO"}</span><h2>${esc(dateLabel(historyDate))}</h2></div><button class="secondary" data-edit-day="${historyDate}">Editar día</button></div>${
+    dayHabits.length
+      ? `<ul class="day-records">${dayHabits
+          .map(({ h }) => {
+            const e = entry(rows, historyDate, h.id);
+            return `<li class="habit-palette ${esc(h.color)}"><span class="day-habit-icon">${habitIcon(h)}</span><div><strong>${esc(h.name)}</strong><p>${esc(historyValue(h, e))}</p></div><span class="record-status ${state(h, e)}">${esc(statusLabel(h, e))}</span></li>`;
+          })
+          .join("")}</ul>`
+      : '<p class="empty">No había hábitos activos en esta fecha.</p>'
+  }${note ? `<div class="history-note"><span class="eyebrow">TU NOTA</span><p>${esc(note)}</p></div>` : ""}<p class="quiet">«Sin registrar» significa que no hay información; no cuenta como «no realizado».</p></section></div>`;
+}
+function progressRange() {
+  const starts = habits()
+    .flatMap((h) => [h, ...(h.versions || [])].map((v) => v.start))
+    .sort();
+  const requested = shift(today(), 1 - period);
+  return {
+    start: starts[0] && starts[0] > requested ? starts[0] : requested,
+    end: today(),
+  };
+}
+function reportHeadline(h, r) {
+  if (!r.days)
+    return {
+      value: "Sin datos",
+      label: "Este hábito no estaba activo en el periodo.",
+    };
+  if (h.id === "exercise")
+    return r.activities
+      ? {
+          value: `${number(r.activities)} ${r.activities === 1 ? "actividad" : "actividades"}`,
+          label: `En ${r.activityDays} ${r.activityDays === 1 ? "día" : "días"} · ${number(r.minutes)} min anotados${r.doneWithoutActivities ? ` · ${r.doneWithoutActivities} días completados sin detalle` : ""}`,
+        }
+      : {
+          value: `${r.done} ${r.done === 1 ? "día de ejercicio" : "días de ejercicio"}`,
+          label: r.done
+            ? "Marcados como completados, sin actividades detalladas."
+            : "Todavía no has anotado ejercicio en este periodo.",
+        };
+  if (h.kind === "number")
+    return {
+      value: r.measuredDays
+        ? `${number(r.amount)} ${h.unit}`
+        : r.legacyDays
+          ? `${r.legacyDays} días completados`
+          : "Sin cantidades",
+      label: r.measuredDays
+        ? `Total anotado en ${r.measuredDays} ${r.measuredDays === 1 ? "día" : "días"}${r.legacyDays ? ` · ${r.legacyDays} días antiguos sin cantidad` : ""}`
+        : "No se inventan cantidades para los registros antiguos.",
+    };
+  if (h.kind === "rating")
+    return {
+      value: `${r.done} ${r.done === 1 ? "valoración" : "valoraciones"}`,
+      label: "Días en los que anotaste cómo fue. No es una nota de salud.",
+    };
+  return {
+    value: `${r.done} ${r.done === 1 ? "día completado" : "días completados"}`,
+    label: `De ${r.total} días activos, sin contar los descansos.`,
+  };
+}
+function weeklyGoalText(h) {
+  const current = at(h, today());
+  return current && !current.archived && current.frequency === "weekly"
+    ? `Esta semana (${shortDate(monday(today()))}–${shortDate(shift(monday(today()), 6))}): <strong>${weekly(h, today())} de ${current.times} días</strong>.`
+    : "";
+}
+function progressCard(h, start, end) {
+  const r = habitReport(h, rows, start, end),
+    headline = reportHeadline(h, r),
+    goal = weeklyGoalText(h);
+  const context =
+    h.kind === "number"
+      ? `Objetivo alcanzado ${r.done} ${r.done === 1 ? "día" : "días"}.`
+      : h.id === "exercise"
+        ? "Varias actividades el mismo día cuentan como un solo día de entrenamiento."
+        : "";
+  return `<article class="panel progress-card habit-palette ${esc(h.color)}" data-progress-habit="${esc(h.id)}"><div class="progress-card-header"><div class="day-habit-icon">${habitIcon(h)}</div><h2>${esc(h.name)}${h.archived ? " · archivado" : ""}</h2><button class="text-button" data-detail="${h.id}">Ver detalle →</button></div><div class="progress-value">${esc(headline.value)}</div><p class="metric-explanation">${esc(headline.label)}</p>${context ? `<p class="quiet">${esc(context)}</p>` : ""}${goal ? `<p class="weekly-goal">${goal}</p>` : ""}<div class="record-breakdown"><span><i class="unknown"></i>${r.unknown} sin registrar</span>${r.rest ? `<span>${r.rest} descansos</span>` : ""}${r.partial ? `<span>${r.partial} avances parciales</span>` : ""}</div></article>`;
 }
 function progressView() {
   const hs = habits(),
-    start = shift(today(), 1 - period),
-    sum = hs.reduce(
-      (a, h) => {
-        const s = stats(h, rows, start, today());
-        a.done += s.done;
-        a.known += s.known;
-        a.total += s.total;
-        return a;
-      },
-      { done: 0, known: 0, total: 0 },
-    );
-  const chart = Array.from({ length: 8 }, (_, i) => {
-    const w = shift(monday(today()), (i - 7) * 7);
-    const end = shift(w, 6) > today() ? today() : shift(w, 6);
-    return { w, n: hs.reduce((a, h) => a + stats(h, rows, w, end).done, 0) };
-  });
-  const max = Math.max(1, ...chart.map((x) => x.n));
-  return `<div class="topline"><span>LA PERSPECTIVA LO CAMBIA TODO</span><span class="pill">TU PROGRESO, A TU MANERA</span></div><h1>Mira cuánto has avanzado.</h1><p class="subtitle">La constancia se ve mejor con un poco de perspectiva.</p><div class="periods">${[7, 30, 90, 365].map((p) => `<button class="small-btn ${period === p ? "active" : ""}" data-period="${p}">${p} días</button>`).join("")}</div><div class="stats-grid"><div class="panel"><span class="big-number">${sum.done}</span><p>Objetivos diarios cumplidos</p></div><div class="panel"><span class="big-number">${sum.total ? Math.round((sum.known / sum.total) * 100) : 0}%</span><p>Cobertura de registros</p></div><div class="panel"><span class="big-number">${hs.filter((h) => !h.archived).length}</span><p>Hábitos activos</p></div></div><div class="panel"><h3>Tus últimas 8 semanas</h3><div class="chart">${chart.map((x) => `<div><span>${x.n}</span><i style="height:${(x.n / max) * 95}px"></i><span>${dateFrom(x.w).toLocaleDateString("es", { day: "numeric", month: "short" })}</span></div>`).join("")}</div><p class="quiet">Objetivos diarios cumplidos. La semana actual está en curso.</p></div><div class="section-title"><h2>Hábito a hábito</h2><small>Abre una tarjeta para ver el detalle</small></div>${hs
-    .map((h) => {
-      const s = stats(h, rows, start, today()),
-        w = weekly(h, today());
-      const current = at(h, today());
-      return `<div class="panel habit-palette ${esc(h.color)}"><div class="section-title" style="margin-top:0"><button class="text-button" data-detail="${h.id}"><h3>${esc(h.name)} ${h.archived ? "· archivado" : ""}</h3></button><span class="pill">${current?.frequency === "weekly" ? `${w}/${current.times} esta semana` : `${s.rate ?? "—"}% completado`}</span></div>${heatmap(h, start, today())}<p>${s.done} completados · ${s.partial} parciales · ${s.coverage}% de cobertura ${s.amount ? `· ${number(s.amount)} ${esc(h.unit)} registrados` : ""}</p></div>`;
-    })
-    .join(
-      "",
-    )}<footer>Los días futuros no cuentan. Los descansos se excluyen del porcentaje diario. Los días sin registrar se muestran como desconocidos; la cobertura indica cuánto sabemos.</footer>`;
+    { start, end } = progressRange(),
+    range = dates(start, end),
+    logged = range.filter(
+      (day) => recordsOn(day).length || rows[`note/${day}`]?.value,
+    ).length;
+  return `<div class="topline"><span>ENTIENDE TU CONSTANCIA</span></div><h1>Mira cuánto has avanzado.</h1><p class="subtitle">Cantidades reales y días anotados, con el mismo periodo para todos tus hábitos.</p><div class="progress-toolbar"><div class="periods" role="group" aria-label="Periodo del progreso">${[7, 30, 90, 365].map((p) => `<button class="small-btn ${period === p ? "active" : ""}" data-period="${p}" aria-pressed="${period === p}">${p === 365 ? "1 año" : `${p} días`}</button>`).join("")}</div><span class="period-label">${shortDate(start)} – ${shortDate(end)} ${dateFrom(end).getFullYear()}</span></div><div class="progress-overview"><div><span class="eyebrow">DÍAS CON ALGÚN REGISTRO</span><p><strong>${logged}</strong><span> de ${range.length} días</span></p></div><p>Cuenta los días en los que anotaste un hábito o una nota.<br>Los días vacíos quedan como «sin registrar».</p></div><div class="progress-cards">${hs.map((h) => progressCard(h, start, end)).join("")}</div><footer>Solo se incluyen días desde que creaste cada hábito. Los descansos aparecen aparte. «Sin registrar» indica falta de información, no que no lo hicieras.</footer>`;
 }
 function settingsView() {
   return `<div class="topline"><span>HAZLO TUYO</span></div><h1>Un sistema que encaje contigo.</h1><p class="subtitle">Define tus objetivos. Puedes cambiarlos sin reescribir tu historia.</p><div class="settings-grid"><section><div class="panel"><div class="section-title" style="margin-top:0"><h2>Tus hábitos</h2><button class="secondary" id="add-habit">+ Añadir</button></div>${habits()
@@ -349,6 +491,38 @@ function bind() {
     document
       .querySelectorAll(sel)
       .forEach((el) => el.addEventListener(event, fn));
+  on("[data-history-date]", "click", (e) => {
+    historyDate = e.currentTarget.dataset.historyDate;
+    render();
+    if (matchMedia("(max-width:850px)").matches)
+      $(".day-detail")?.scrollIntoView({
+        block: "start",
+        behavior: matchMedia("(prefers-reduced-motion:reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+  });
+  on("[data-history-month]", "click", (e) => {
+    historyDate = shiftMonth(
+      historyDate,
+      Number(e.currentTarget.dataset.historyMonth),
+    );
+    render();
+  });
+  on("[data-history-today]", "click", () => {
+    historyDate = today();
+    render();
+  });
+  on("[data-edit-day]", "click", (e) => {
+    selected = e.currentTarget.dataset.editDay;
+    editingHistory = true;
+    navigate("today");
+  });
+  on("[data-back-history]", "click", () => {
+    historyDate = selected;
+    editingHistory = false;
+    navigate("history");
+  });
   on("[data-date]", "click", (e) => {
     selected = e.currentTarget.dataset.date;
     $("#detail").close();
@@ -360,6 +534,7 @@ function bind() {
   });
   on("[data-today]", "click", () => {
     selected = today();
+    editingHistory = false;
     render();
   });
   $("#selected-date")?.addEventListener("change", (e) => {
@@ -486,6 +661,7 @@ function bind() {
   });
   $("#save-note")?.addEventListener("click", () => {
     put(`note/${selected}`, $("#daily-note").value.trim() || null);
+    document.activeElement?.blur();
     notify("Nota guardada");
   });
   on("[data-period]", "click", (e) => {
@@ -536,59 +712,38 @@ function bind() {
 }
 function showDetail(id) {
   const h = habits().find((h) => h.id === id),
-    s = stats(h, rows, shift(today(), -29), today()),
-    streak = streaks(h, rows, today()),
-    previous = stats(h, rows, shift(today(), -59), shift(today(), -30));
+    { start, end } = progressRange(),
+    r = habitReport(h, rows, start, end),
+    headline = reportHeadline(h, r),
+    streak = streaks(h, rows, today());
+  const breakdown = [
+    ["Objetivo cumplido", r.done, "done"],
+    ["Avance parcial", r.partial, "partial"],
+    ["No realizado", r.miss, "miss"],
+    ["Descanso", r.rest, "rest"],
+    ["Sin registrar", r.unknown, "unknown"],
+  ];
+  const months = [];
+  for (let month = start.slice(0, 7) + "-01"; month <= end;) {
+    months.push(month);
+    const d = dateFrom(month);
+    month = localDate(new Date(d.getFullYear(), d.getMonth() + 1, 1, 12));
+  }
   $("#detail-content").innerHTML =
-    `<span class="eyebrow">TU HÁBITO EN PERSPECTIVA</span><h2>${esc(h.name)}</h2><p class="subtitle">Últimos 30 días · ${s.coverage}% de cobertura</p><div class="stats-grid"><div><strong class="big-number">${s.done}</strong><p>Completados</p></div><div><strong class="big-number">${streak.current}</strong><p>${streak.unit} de racha</p></div><div><strong class="big-number">${streak.best}</strong><p>Mejor racha</p></div></div>${h.frequency === "weekly" ? `<p>Semanas con objetivo cumplido: ${Object.values(s.weeks).filter((w) => w.done >= w.target).length}. Las semanas al borde del periodo pueden ser parciales.</p>` : `<p>Cumplimiento: ${s.rate ?? "—"}%. Periodo anterior: ${previous.rate ?? "—"}% (${previous.coverage}% de cobertura).</p>`}${detailPatterns(h)}<p class="quiet">${s.partial} parciales · ${s.rest} descansos · ${s.total - s.known} sin registrar${s.amount ? ` · ${number(s.amount)} ${esc(h.unit)} registrados` : ""}. Las marcas antiguas sin cantidad cuentan como completadas, pero no añaden unidades al total.</p><h3>Un año de pequeños pasos</h3><div style="margin-top:15px">${heatmap(h, shift(today(), -364), today())}</div><button class="text-button" data-edit="${h.id}">Editar objetivo</button>`;
-  $("#detail").showModal();
+    `<div class="detail-report habit-palette ${esc(h.color)}"><span class="eyebrow">${shortDate(start)} – ${shortDate(end)} · ${period === 365 ? "ÚLTIMO AÑO" : `ÚLTIMOS ${period} DÍAS`}</span><h2>${esc(h.name)}</h2><div class="progress-value">${esc(headline.value)}</div><p class="metric-explanation">${esc(headline.label)}</p><div class="detail-breakdown">${breakdown.map(([label, value, status]) => `<div><span class="status-dot ${status}"></span><span>${label === "Objetivo cumplido" && h.kind === "rating" ? "Valoración anotada" : label}</span><strong>${value} ${value === 1 ? "día" : "días"}</strong></div>`).join("")}</div><p class="quiet">Estos ${r.days} días son los días en los que el hábito estaba activo dentro del periodo seleccionado. Los descansos se muestran aparte.</p>${h.kind === "number" ? `<p class="quiet">Meta actual: ${number(h.target)} ${esc(h.unit)} por día. Los días anteriores se evalúan con la meta que tenían entonces.${r.legacyDays ? ` Hay ${r.legacyDays} días antiguos completados sin cantidad; cuentan como completados, pero no suman unidades.` : ""}</p>` : ""}${h.kind === "rating" ? `<h3>Tus valoraciones</h3><ul class="rating-distribution">${ratingLabels.map((label, i) => `<li><span>${label}</span><strong>${r.ratings[i]}</strong></li>`).join("")}</ul>` : ""}${h.frequency === "weekly" ? `<div class="weekly-detail"><h3>Tu objetivo por semanas</h3><p class="quiet">${weeklyGoalText(h)}</p>${r.weekResults.length ? `<ul>${r.weekResults.map((week) => `<li><span>${shortDate(week.start)} – ${shortDate(week.end)}</span><strong>${week.done} de ${week.target} días ${week.done >= week.target ? "✓" : ""}</strong></li>`).join("")}</ul>` : '<p class="quiet">Todavía no hay semanas completas dentro de este periodo.</p>'}<p class="quiet">La lista incluye solo semanas completas dentro de estas fechas. La semana actual se muestra aparte mientras sigue en curso.</p></div>` : ""}<details class="streak-info"><summary>Rachas hasta hoy</summary><p class="quiet">Actual: ${streak.current} ${streak.unit}. Mejor: ${streak.best} ${streak.unit}. Se calculan sobre todo tu historial hasta hoy, independientemente del periodo elegido.</p></details><h3 class="calendar-detail-title">Tus días, con fecha</h3><p class="quiet">Toca un día para consultar o corregir su registro.</p><div class="detail-calendars">${months.map((month) => `<section><h4>${dateFrom(month).toLocaleDateString("es", { month: "long", year: "numeric" })}</h4>${calendarMonth(month, { habit: h, from: start, to: end, select: "edit", compact: true })}</section>`).join("")}</div><div class="calendar-status-key"><span>✓ Completado</span><span>◐ Parcial</span><span>× No realizado</span><span>– Descanso</span><span>· Sin registrar</span></div><button class="text-button" data-edit="${h.id}">Editar objetivo</button></div>`;
+  if (!$("#detail").open) $("#detail").showModal();
   $("#detail-content")
     .querySelectorAll("[data-date]")
     .forEach((b) =>
       b.addEventListener("click", () => {
-        selected = b.dataset.date;
+        historyDate = b.dataset.date;
         $("#detail").close();
-        navigate("today");
+        navigate("history");
       }),
     );
   $("#detail-content")
     .querySelector("[data-edit]")
     .addEventListener("click", () => editHabit(id));
-}
-function detailPatterns(h) {
-  const start = shift(today(), -89),
-    days = dates(start, today()).filter((d) => at(h, d) && !at(h, d).archived);
-  const weekdays = ["L", "M", "X", "J", "V", "S", "D"].map((label, i) => {
-    const eligible = days.filter(
-      (d) =>
-        (dateFrom(d).getDay() + 6) % 7 === i &&
-        entry(rows, d, h.id)?.status !== "rest",
-    );
-    const done = eligible.filter((d) =>
-      achieved(at(h, d), entry(rows, d, h.id)),
-    ).length;
-    return {
-      label,
-      total: eligible.length,
-      done,
-      rate: eligible.length ? Math.round((done / eligible.length) * 100) : 0,
-    };
-  });
-  const minutes = days.reduce(
-    (n, d) => n + (entry(rows, d, h.id)?.minutes || 0),
-    0,
-  );
-  const activities =
-    h.id === "exercise"
-      ? days.reduce(
-          (n, d) => n + exerciseSessions(entry(rows, d, h.id)).length,
-          0,
-        )
-      : 0;
-  const ratings = [0, 1, 2, 3].map(
-    (r) => days.filter((d) => entry(rows, d, h.id)?.rating === r).length,
-  );
-  return `<h3>Tu ritmo por día de la semana</h3><p class="quiet">Últimos 90 días. Incluye los días sin registrar; compáralo con tu cobertura.</p><div class="chart">${weekdays.map((w) => `<div><span>${w.rate}%</span><i style="height:${w.rate}px"></i><span>${w.label}</span></div>`).join("")}</div>${activities ? `<p>${number(activities)} actividades · ${number(minutes)} minutos registrados en los últimos 90 días.</p>` : minutes ? `<p>${number(minutes)} minutos de actividad registrados en los últimos 90 días.</p>` : ""}${h.kind === "rating" ? `<p class="quiet">Valoraciones (90 días): ${ratings.map((n, i) => `${["Hoy fue diferente", "En parte", "Según lo previsto", "Muy a gusto"][i]}: ${n}`).join(" · ")}. Son valoraciones personales, no una medida nutricional.</p>` : ""}`;
 }
 function editHabit(id) {
   const h = habits().find((h) => h.id === id) || {
@@ -870,9 +1025,15 @@ window.addEventListener("hashchange", () => {
   view = location.hash.slice(1);
   render();
 });
-document
-  .querySelectorAll("[data-view]")
-  .forEach((b) => b.addEventListener("click", () => navigate(b.dataset.view)));
+document.querySelectorAll("[data-view]").forEach((b) =>
+  b.addEventListener("click", () => {
+    if (b.dataset.view === "today") {
+      selected = today();
+      editingHistory = false;
+    }
+    navigate(b.dataset.view);
+  }),
+);
 $("#close-dialog").addEventListener("click", () => $("#detail").close());
 $("#detail").addEventListener("click", (e) => {
   if (e.target === $("#detail")) {

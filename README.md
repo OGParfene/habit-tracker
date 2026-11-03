@@ -7,8 +7,8 @@ Un espacio personal para registrar hábitos, retomar después de una pausa y ent
 - Hoy: registro con un toque, cantidades reales, avances parciales, descansos y deshacer.
 - Ejercicio con objetivo semanal y múltiples actividades por día, cada una con duración opcional, eliminación y deshacer. Puedes añadir actividades después de completar el hábito sin contarlo varias veces. Los deportes históricos se conservan. Creatina, pasos, lectura y alimentación como hábitos iniciales editables.
 - Hábitos personalizados, objetivos diarios o semanales, archivo y cambios efectivos desde hoy conservando objetivos anteriores.
-- Historial editable de 14 días, selector para navegar a cualquier fecha pasada y notas diarias.
-- Progreso por 7/30/90/365 días, mapas de constancia, tendencias semanales, cobertura, rachas y acumulados.
+- Historial mensual con calendario, vista del día seleccionado, notas y edición explícita con vuelta al historial.
+- Progreso por 7/30/90/365 días con totales en sus unidades, actividades y días separados, objetivos semanales por días y detalle de estados con calendarios fechados. Todos los datos del detalle usan el periodo seleccionado; las rachas de todo el historial se identifican aparte.
 - Migración automática de `calendarData` sin borrar el original. Las cantidades históricas desconocidas no se inventan.
 - Exportación JSON y CSV, importación con combinación por fecha de modificación y descarga previa de una copia.
 - PWA instalable con recursos precargados para uso sin conexión.
@@ -64,3 +64,9 @@ Los recordatorios son eventos de calendario, no push de la web. No hay lectura a
 ## Identidad visual
 
 Monograma vectorial P de Parfene, con un trazo continuo y un punto que representa el siguiente paso. Base marfil e índigo; terracota para ejercicio, turquesa para caminar, azul para lectura, violeta para creatina y frambuesa para alimentación. Son asociaciones visuales para identificar las actividades y dar coherencia, sin promesas de efectos psicológicos. El logo está en `public/icon.svg` y se publica también como favicon y símbolo de la aplicación.
+
+## Lectura de progreso e historial
+
+El resumen cuenta días con algún hábito o nota registrados. Cada hábito muestra cantidades reales (pasos, minutos, actividades o valoraciones) y distingue explícitamente completado, parcial, no realizado, descanso y sin registrar. Los registros antiguos sin cantidad no añaden unidades inventadas. Los objetivos semanales se miden en días completados y el listado solo compara semanas completas del periodo. Las rachas se consultan de forma secundaria y se rotulan como calculadas hasta hoy sobre todo el historial.
+
+En móvil, los campos de entrada usan al menos 16 px para evitar el zoom automático de Safari; no se restringe el zoom manual. Al guardar se retira el foco del campo.

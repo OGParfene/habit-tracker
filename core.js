@@ -341,3 +341,63 @@ export function validateBackup(input) {
   }
   return input.rows;
 }
+
+// The same date range and eligible dates drive every number shown in Progress.
+export function habitReport(h, rows, from, to) {
+  const s = stats(h, rows, from, to);
+  const days = dates(from, to).filter((date) => {
+    const config = at(h, date);
+    return config && !config.archived;
+  });
+  const records = days.map((date) => ({
+    date,
+    config: at(h, date),
+    value: entry(rows, date, h.id),
+  }));
+  const measured = records.filter(
+    (r) =>
+      r.value?.status !== "rest" &&
+      Number.isFinite(r.value?.amount) &&
+      !r.value.legacy,
+  );
+  const activities = records.flatMap((r) => exerciseSessions(r.value));
+  const weekResults = [];
+  for (let week = monday(from); week <= to; week = shift(week, 7)) {
+    const end = shift(week, 6);
+    if (week < from || end > to) continue;
+    const configs = dates(week, end).map((date) => at(h, date));
+    if (
+      configs.some(
+        (config) => !config || config.archived || config.frequency !== "weekly",
+      )
+    )
+      continue;
+    const target = configs.at(-1).times;
+    const done = dates(week, end).filter((date) =>
+      achieved(at(h, date), entry(rows, date, h.id)),
+    ).length;
+    weekResults.push({ start: week, end, done, target });
+  }
+  return {
+    ...s,
+    days: days.length,
+    unknown: s.total - s.known,
+    miss: s.known - s.done - s.partial,
+    measuredDays: measured.length,
+    legacyDays: records.filter((r) => r.value?.legacy).length,
+    activities: activities.length,
+    doneWithoutActivities: records.filter(
+      (r) => achieved(r.config, r.value) && !exerciseSessions(r.value).length,
+    ).length,
+    activityDays: records.filter((r) => exerciseSessions(r.value).length)
+      .length,
+    minutes: records.reduce((sum, r) => sum + (r.value?.minutes || 0), 0),
+    ratings: [0, 1, 2, 3].map(
+      (rating) =>
+        records.filter(
+          (r) => r.value?.status === "done" && r.value.rating === rating,
+        ).length,
+    ),
+    weekResults,
+  };
+}
