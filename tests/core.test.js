@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  exerciseSessions,
+  withExerciseSessions,
   localDate,
   dateFrom,
   shift,
@@ -109,6 +111,73 @@ test("backup validates schema and rejects malformed imports", () => {
     validateBackup({
       version: 2,
       rows: { "habit/a": { value: { name: "x" }, updatedAt: "2026-01-01" } },
+    }),
+  );
+});
+test("multiple workouts retain independent durations and count the habit only once", () => {
+  const exercise = defaults("2026-01-01")[0];
+  const first = withExerciseSessions({ status: "done" }, [
+    { id: "a", sport: "Fuerza", minutes: 35 },
+  ]);
+  const second = withExerciseSessions(first, [
+    ...exerciseSessions(first),
+    { id: "b", sport: "Cardio", minutes: 20 },
+  ]);
+  assert.equal(second.minutes, 55);
+  assert.deepEqual(second.sports, ["Fuerza", "Cardio"]);
+  assert.equal(
+    stats(
+      exercise,
+      { [recordKey("2026-01-01", "exercise")]: { value: second } },
+      "2026-01-01",
+      "2026-01-01",
+    ).done,
+    1,
+  );
+  const rows = {
+    [recordKey("2026-01-01", "exercise")]: {
+      value: second,
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+  };
+  assert.deepEqual(validateBackup({ version: 2, rows }), rows);
+});
+test("legacy exercise records are retained when adding a workout without duplicating durations", () => {
+  const old = { status: "done", sports: ["Tenis"], minutes: 40 };
+  const next = withExerciseSessions(old, [
+    ...exerciseSessions(old),
+    { id: "a", sport: "Movilidad", minutes: 10 },
+  ]);
+  assert.equal(next.minutes, 50);
+  assert.equal(next.sessions[0].sport, "Tenis");
+  assert.equal(next.sessions[0].minutes, 40);
+  const ambiguous = {
+    status: "done",
+    sports: ["Tenis", "Fuerza"],
+    minutes: 45,
+  };
+  const preserved = withExerciseSessions(ambiguous, [
+    ...exerciseSessions(ambiguous),
+    { id: "b", sport: "Cardio", minutes: 10 },
+  ]);
+  assert.equal(preserved.minutes, 55);
+  assert.equal(preserved.unallocatedMinutes, 45);
+  assert.equal(preserved.sessions[0].minutes, null);
+});
+test("backup rejects malformed workout lists", () => {
+  const value = {
+    status: "done",
+    sessions: [{ id: "a", sport: "Fuerza", minutes: -1 }],
+  };
+  assert.throws(() =>
+    validateBackup({
+      version: 2,
+      rows: {
+        "entry/2026-01-01/exercise": {
+          value,
+          updatedAt: "2026-01-01T00:00:00Z",
+        },
+      },
     }),
   );
 });

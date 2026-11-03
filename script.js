@@ -15,6 +15,8 @@ import {
   migrate,
   mergeRows,
   validateBackup,
+  exerciseSessions,
+  withExerciseSessions,
 } from "./core.js";
 const $ = (s) => document.querySelector(s),
   esc = (s) =>
@@ -163,16 +165,38 @@ function miniWeek(h) {
       "",
     )}<span>${h.frequency === "weekly" ? `${weekly(h, selected)}/${h.times} esta semana` : "Tu semana"}</span></div>`;
 }
+function habitIcon(h) {
+  const paths = {
+    exercise:
+      '<path d="m5 8 3-3m8 14 3-3M4 7l3-3m10 16 3-3M7 7l10 10M3 10l7-7m4 18 7-7"/>',
+    creatine:
+      '<path d="m9 4 11 11a5 5 0 0 1-7 7L2 11a5 5 0 0 1 7-7Z" transform="translate(1 -1) scale(.9)"/><path d="m8 16 8-8"/>',
+    steps:
+      '<path d="M5 8c0-3 1-5 3-5s3 2 3 5-1 5-3 5-3-2-3-5Zm8 5c0-3 1-5 3-5s3 2 3 5-1 5-3 5-3-2-3-5Z"/><path d="M6 17h4m4 5h4"/>',
+    reading:
+      '<path d="M12 6c-3-2-6-2-10-1v14c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1Zm0 0v14"/>',
+    food: '<path d="M12 8c-7-6-14 4-6 12 2 2 4-1 6 0 2-1 4 2 6 0 8-8 1-18-6-12Z"/><path d="M12 8c-1-4 1-6 4-6 0 3-1 5-4 6Z"/>',
+  };
+  return paths[h.id]
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[h.id]}</svg>`
+    : esc(h.icon);
+}
+function exerciseEditor(record) {
+  const sessions = exerciseSessions(record),
+    total =
+      record?.minutes ?? sessions.reduce((sum, s) => sum + (s.minutes || 0), 0);
+  return `<div class="exercise-log">${sessions.length ? `<div class="session-heading"><span>${sessions.length} ${sessions.length === 1 ? "actividad" : "actividades"} de hoy</span>${total ? `<span>${number(total)} min registrados</span>` : ""}</div><ul class="session-list">${sessions.map((session) => `<li><span class="session-marker" aria-hidden="true"></span><span class="session-name">${esc(session.sport)}</span><span class="session-time">${session.minutes !== null ? `${number(session.minutes)} min` : "Sin duración"}</span><button type="button" class="remove-session" data-remove-session="${esc(session.id)}" aria-label="Eliminar ${esc(session.sport)}${session.minutes !== null ? ` de ${session.minutes} minutos` : ""}">×</button></li>`).join("")}</ul>${record?.unallocatedMinutes ? `<p class="exercise-hint">${number(record.unallocatedMinutes)} min anteriores sin desglose por actividad.</p>` : ""}` : ""}<form id="exercise-form" class="exercise-form"><label>Actividad<select id="sport" name="sport" required><option value="">Elegir ejercicio</option>${["Fuerza", "Abdominales", "Boxeo", "Fútbol", "Cardio", "Natación", "Pádel", "Tenis", "Movilidad", "Otro"].map((x) => `<option>${x}</option>`).join("")}</select></label><label>Duración · opcional<input id="duration" name="minutes" inputmode="numeric" type="number" min="0" max="1440" step="1" placeholder="Minutos"></label><button class="add-exercise" type="submit">+ Añadir ejercicio</button><label id="custom-sport-label" class="custom-sport" hidden>Nombre del ejercicio<input name="customSport" maxlength="80" placeholder="Por ejemplo, bicicleta"></label></form><p class="exercise-hint">${record?.status === "done" ? "Hábito completado. Puedes seguir sumando actividades." : "Cada actividad suma. El objetivo diario cuenta una sola vez."}</p></div>`;
+}
 function card(h) {
   const e = entry(rows, selected, h.id),
     s = state(h, e),
     done = s === "done",
     rest = s === "rest";
   const amount = e?.amount || 0;
-  return `<article class="habit ${esc(h.color)}"><div class="habit-top"><div class="habit-icon" aria-hidden="true">${esc(h.icon)}</div><div class="habit-title"><button data-detail="${h.id}">${esc(h.name)}</button><small>${rest ? "Descanso previsto" : done ? (e?.legacy ? "Completado · registro antiguo" : "Objetivo completado") : h.kind === "number" ? `${number(amount)} / ${number(h.target)} ${esc(h.unit)}` : h.frequency === "weekly" ? `Tu objetivo: ${h.times} veces por semana` : "Un pequeño paso, cada día"}</small></div><button class="check ${done ? "done" : ""}" data-check="${h.id}" aria-label="${done ? "Deshacer" : "Completar"} ${esc(h.name)}" aria-pressed="${done}">${done ? "✓" : "+"}</button></div>
+  return `<article class="habit ${esc(h.color)} ${done ? "is-complete" : ""}" data-habit="${esc(h.id)}"><div class="habit-top"><div class="habit-icon" aria-hidden="true">${habitIcon(h)}</div><div class="habit-title"><button data-detail="${h.id}">${esc(h.name)}</button><small>${rest ? "Descanso previsto" : done ? (e?.legacy ? "Completado · registro antiguo" : "Objetivo completado") : h.kind === "number" ? `${number(amount)} / ${number(h.target)} ${esc(h.unit)}` : h.frequency === "weekly" ? `Tu objetivo: ${h.times} veces por semana` : "Un pequeño paso, cada día"}</small></div><button class="check ${done ? "done" : ""}" data-check="${h.id}" aria-label="${done ? "Deshacer" : "Completar"} ${esc(h.name)}" aria-pressed="${done}">${done ? "✓" : "+"}</button></div>
  ${h.kind === "number" ? `<form class="entry-controls" data-amount="${h.id}"><input type="number" inputmode="numeric" min="0" max="1000000" step="1" name="amount" placeholder="Cantidad" value="${e?.amount ?? ""}" aria-label="${esc(h.name)} en ${esc(h.unit)}" required><span class="quiet">${esc(h.unit)}</span><button class="small-btn" type="submit">Guardar</button><button class="text-button" type="button" data-minimum="${h.id}">Versión mínima (${Math.max(1, Math.round(h.target / 3))})</button></form>` : ""}
  ${h.kind === "rating" ? `<div class="entry-controls">${["Hoy fue diferente", "En parte", "Según lo previsto", "Muy a gusto"].map((label, i) => `<button class="small-btn" data-rating="${h.id}" data-value="${i}" aria-pressed="${e?.rating === i}">${label}</button>`).join("")}</div>` : ""}
- ${h.id === "exercise" ? `<div class="entry-controls"><label>Deporte <select id="sport"><option value="">Elegir deporte</option>${["Fuerza", "Abdominales", "Boxeo", "Futbol", "Cardio", "Natación", "Padel", "Tenis", "Otro"].map((x) => `<option ${e?.sports?.includes(x) ? "selected" : ""}>${x}</option>`).join("")}</select></label><label>Minutos <input id="duration" type="number" min="0" max="1440" value="${e?.minutes ?? ""}" placeholder="Opcional"></label><button class="small-btn" data-sport>Registrar sesión</button></div>` : ""}
+ ${h.id === "exercise" ? exerciseEditor(e) : ""}
  ${miniWeek(h)}<div class="entry-controls"><button class="text-button" data-status="miss" data-id="${h.id}" aria-pressed="${s === "miss"}">${s === "miss" ? "• " : ""}No realizado</button><button class="text-button" data-status="rest" data-id="${h.id}" aria-pressed="${rest}">Descanso</button>${e ? `<button class="text-button" data-clear="${h.id}">Borrar registro</button>` : ""}</div></article>`;
 }
 function todayView() {
@@ -285,7 +309,7 @@ function progressView() {
       const s = stats(h, rows, start, today()),
         w = weekly(h, today());
       const current = at(h, today());
-      return `<div class="panel"><div class="section-title" style="margin-top:0"><button class="text-button" data-detail="${h.id}"><h3>${esc(h.name)} ${h.archived ? "· archivado" : ""}</h3></button><span class="pill">${current?.frequency === "weekly" ? `${w}/${current.times} esta semana` : `${s.rate ?? "—"}% completado`}</span></div>${heatmap(h, start, today())}<p>${s.done} completados · ${s.partial} parciales · ${s.coverage}% de cobertura ${s.amount ? `· ${number(s.amount)} ${esc(h.unit)} registrados` : ""}</p></div>`;
+      return `<div class="panel habit-palette ${esc(h.color)}"><div class="section-title" style="margin-top:0"><button class="text-button" data-detail="${h.id}"><h3>${esc(h.name)} ${h.archived ? "· archivado" : ""}</h3></button><span class="pill">${current?.frequency === "weekly" ? `${w}/${current.times} esta semana` : `${s.rate ?? "—"}% completado`}</span></div>${heatmap(h, start, today())}<p>${s.done} completados · ${s.partial} parciales · ${s.coverage}% de cobertura ${s.amount ? `· ${number(s.amount)} ${esc(h.unit)} registrados` : ""}</p></div>`;
     })
     .join(
       "",
@@ -314,6 +338,10 @@ function render() {
     progress: progressView,
     settings: settingsView,
   }[view]();
+  $("#main").insertAdjacentHTML(
+    "afterbegin",
+    '<a class="mobile-brand" href="#today"><img src="./icon.svg" alt="" width="28" height="28"><span>A tu ritmo</span><small>TU SIGUIENTE PASO</small></a>',
+  );
   bind();
 }
 function bind() {
@@ -356,7 +384,9 @@ function bind() {
       selected,
       id,
       achieved(h, old)
-        ? null
+        ? id === "exercise" && exerciseSessions(old).length
+          ? { ...old, status: "miss" }
+          : null
         : {
             ...old,
             status: "done",
@@ -366,6 +396,9 @@ function bind() {
   });
   on("[data-status]", "click", (e) =>
     change(selected, e.currentTarget.dataset.id, {
+      ...(e.currentTarget.dataset.id === "exercise"
+        ? entry(rows, selected, "exercise")
+        : {}),
       status: e.currentTarget.dataset.status,
     }),
   );
@@ -398,18 +431,58 @@ function bind() {
       rating: Number(e.currentTarget.dataset.value),
     }),
   );
-  $("[data-sport]")?.addEventListener("click", () => {
-    const minutes = Number($("#duration").value);
-    if (!Number.isFinite(minutes) || minutes < 0 || minutes > 1440) {
-      notify("Introduce una duración de 0 a 1440 minutos.");
+  $("#sport")?.addEventListener("change", (e) => {
+    const custom = e.target.value === "Otro";
+    $("#custom-sport-label").hidden = !custom;
+    $("#custom-sport-label input").required = custom;
+    if (custom) $("#custom-sport-label input").focus();
+  });
+  $("#exercise-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget),
+      raw = form.get("minutes");
+    const minutes = raw === "" ? null : Number(raw),
+      sport = (
+        form.get("sport") === "Otro"
+          ? form.get("customSport")
+          : form.get("sport")
+      ).trim();
+    if (
+      !sport ||
+      sport.length > 80 ||
+      (minutes !== null &&
+        (!Number.isInteger(minutes) || minutes < 0 || minutes > 1440))
+    ) {
+      notify("Introduce una actividad y una duración válida.");
       return;
     }
-    const sport = $("#sport").value;
-    change(selected, "exercise", {
-      status: "done",
-      sports: sport ? [sport] : [],
-      minutes,
-    });
+    const old = entry(rows, selected, "exercise"),
+      sessions = exerciseSessions(old);
+    if (sessions.length >= 50) {
+      notify("Ya hay 50 actividades en este día.");
+      return;
+    }
+    change(
+      selected,
+      "exercise",
+      withExerciseSessions({ ...old, status: "done" }, [
+        ...sessions,
+        { id: crypto.randomUUID(), sport, minutes },
+      ]),
+    );
+  });
+  on("[data-remove-session]", "click", (e) => {
+    const old = entry(rows, selected, "exercise");
+    change(
+      selected,
+      "exercise",
+      withExerciseSessions(
+        old,
+        exerciseSessions(old).filter(
+          (s) => s.id !== e.currentTarget.dataset.removeSession,
+        ),
+      ),
+    );
   });
   $("#save-note")?.addEventListener("click", () => {
     put(`note/${selected}`, $("#daily-note").value.trim() || null);
@@ -505,10 +578,17 @@ function detailPatterns(h) {
     (n, d) => n + (entry(rows, d, h.id)?.minutes || 0),
     0,
   );
+  const activities =
+    h.id === "exercise"
+      ? days.reduce(
+          (n, d) => n + exerciseSessions(entry(rows, d, h.id)).length,
+          0,
+        )
+      : 0;
   const ratings = [0, 1, 2, 3].map(
     (r) => days.filter((d) => entry(rows, d, h.id)?.rating === r).length,
   );
-  return `<h3>Tu ritmo por día de la semana</h3><p class="quiet">Últimos 90 días. Incluye los días sin registrar; compáralo con tu cobertura.</p><div class="chart">${weekdays.map((w) => `<div><span>${w.rate}%</span><i style="height:${w.rate}px"></i><span>${w.label}</span></div>`).join("")}</div>${minutes ? `<p>${number(minutes)} minutos de actividad registrados en los últimos 90 días.</p>` : ""}${h.kind === "rating" ? `<p class="quiet">Valoraciones (90 días): ${ratings.map((n, i) => `${["Hoy fue diferente", "En parte", "Según lo previsto", "Muy a gusto"][i]}: ${n}`).join(" · ")}. Son valoraciones personales, no una medida nutricional.</p>` : ""}`;
+  return `<h3>Tu ritmo por día de la semana</h3><p class="quiet">Últimos 90 días. Incluye los días sin registrar; compáralo con tu cobertura.</p><div class="chart">${weekdays.map((w) => `<div><span>${w.rate}%</span><i style="height:${w.rate}px"></i><span>${w.label}</span></div>`).join("")}</div>${activities ? `<p>${number(activities)} actividades · ${number(minutes)} minutos registrados en los últimos 90 días.</p>` : minutes ? `<p>${number(minutes)} minutos de actividad registrados en los últimos 90 días.</p>` : ""}${h.kind === "rating" ? `<p class="quiet">Valoraciones (90 días): ${ratings.map((n, i) => `${["Hoy fue diferente", "En parte", "Según lo previsto", "Muy a gusto"][i]}: ${n}`).join(" · ")}. Son valoraciones personales, no una medida nutricional.</p>` : ""}`;
 }
 function editHabit(id) {
   const h = habits().find((h) => h.id === id) || {
@@ -536,7 +616,7 @@ function editHabit(id) {
       )
       .join(
         "",
-      )}</select></label><label>Frecuencia<select name="frequency"><option value="daily" ${h.frequency === "daily" ? "selected" : ""}>Cada día</option><option value="weekly" ${h.frequency === "weekly" ? "selected" : ""}>Veces por semana</option></select></label></div><div class="form-row"><label>Cantidad objetivo por día<input name="target" type="number" min="1" max="1000000" value="${h.target}" required></label><label>Unidad<input name="unit" maxlength="25" value="${esc(h.unit)}" required></label></div><div class="form-row"><label>Veces por semana (1–7)<input name="times" type="number" min="1" max="7" value="${h.times}" required></label><label>Color<select name="color">${["green", "blue", "purple", "orange", "pink"].map((c, i) => `<option value="${c}" ${h.color === c ? "selected" : ""}>${["Verde", "Azul", "Lila", "Ámbar", "Rosa"][i]}</option>`).join("")}</select></label></div><label><span><input type="checkbox" name="archived" ${h.archived ? "checked" : ""}> Pausar / archivar este hábito</span></label><p class="quiet">Los cambios se aplican desde hoy. El historial anterior conserva el objetivo que tenía entonces. El descanso se registra por día.</p><button class="primary">Guardar hábito</button></form>`;
+      )}</select></label><label>Frecuencia<select name="frequency"><option value="daily" ${h.frequency === "daily" ? "selected" : ""}>Cada día</option><option value="weekly" ${h.frequency === "weekly" ? "selected" : ""}>Veces por semana</option></select></label></div><div class="form-row"><label>Cantidad objetivo por día<input name="target" type="number" min="1" max="1000000" value="${h.target}" required></label><label>Unidad<input name="unit" maxlength="25" value="${esc(h.unit)}" required></label></div><div class="form-row"><label>Veces por semana (1–7)<input name="times" type="number" min="1" max="7" value="${h.times}" required></label><label>Color<select name="color">${["green", "blue", "purple", "orange", "pink"].map((c, i) => `<option value="${c}" ${h.color === c ? "selected" : ""}>${["Turquesa", "Azul", "Violeta", "Terracota", "Frambuesa"][i]}</option>`).join("")}</select></label></div><label><span><input type="checkbox" name="archived" ${h.archived ? "checked" : ""}> Pausar / archivar este hábito</span></label><p class="quiet">Los cambios se aplican desde hoy. El historial anterior conserva el objetivo que tenía entonces. El descanso se registra por día.</p><button class="primary">Guardar hábito</button></form>`;
   if (!$("#detail").open) $("#detail").showModal();
   $("#habit-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -595,6 +675,7 @@ function exportCSV() {
       "Valoración",
       "Deporte",
       "Duración (min)",
+      "Actividades (detalle)",
     ],
   ];
   for (const [k, r] of Object.entries(rows)) {
@@ -611,6 +692,14 @@ function exportCSV() {
       e.rating,
       e.sports?.join(", "),
       e.minutes,
+      id === "exercise"
+        ? exerciseSessions(e)
+            .map(
+              (session) =>
+                `${session.sport}${session.minutes !== null ? ` (${session.minutes} min)` : ""}`,
+            )
+            .join(" | ")
+        : "",
     ]);
   }
   download(

@@ -117,3 +117,95 @@ test("responsive layouts and offline reload", async ({ page, context }) => {
   ).toBeVisible();
   expect(errors).toEqual([]);
 });
+test("several exercises persist after completion and can be removed or undone independently", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Completar Ejercicio", exact: true })
+    .click();
+  await page
+    .getByRole("combobox", { name: "Actividad", exact: true })
+    .selectOption("Fuerza");
+  await page.getByLabel("Duración · opcional", { exact: true }).fill("35");
+  await page
+    .getByRole("button", { name: "+ Añadir ejercicio", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Deshacer Ejercicio", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("combobox", { name: "Actividad", exact: true })
+    .selectOption("Cardio");
+  await page.getByLabel("Duración · opcional", { exact: true }).fill("20");
+  await page
+    .getByRole("button", { name: "+ Añadir ejercicio", exact: true })
+    .click();
+  await expect(page.locator(".session-list li")).toHaveCount(2);
+  await expect(page.locator(".session-heading")).toContainText(
+    "55 min registrados",
+  );
+  await expect(page.locator(".hero h2")).toHaveText(
+    "1 de 5 hábitos completados",
+  );
+  await page.reload();
+  await expect(page.locator(".session-list li")).toHaveCount(2);
+  await page
+    .getByRole("button", { name: "Eliminar Fuerza de 35 minutos", exact: true })
+    .click();
+  await expect(page.locator(".session-heading")).toContainText(
+    "20 min registrados",
+  );
+  await page.getByRole("button", { name: "Deshacer", exact: true }).click();
+  await expect(page.locator(".session-list li")).toHaveCount(2);
+  await page
+    .getByRole("button", { name: "Deshacer Ejercicio", exact: true })
+    .click();
+  await expect(page.locator(".session-list li")).toHaveCount(2);
+  await expect(
+    page.getByRole("button", { name: "Completar Ejercicio", exact: true }),
+  ).toBeVisible();
+});
+test("legacy workouts and custom activity names survive export and import", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    if (localStorage.getItem("rhythm-v2")) return;
+    const d = new Date();
+    const key = [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+    ].join("-");
+    localStorage.setItem(
+      "calendarData",
+      JSON.stringify({ [key]: { exercise: true, sports: ["Tenis", "Boxeo"] } }),
+    );
+  });
+  await page.goto("/");
+  await expect(page.locator(".session-list li")).toHaveCount(2);
+  await page
+    .getByRole("combobox", { name: "Actividad", exact: true })
+    .selectOption("Otro");
+  await page
+    .getByLabel("Nombre del ejercicio", { exact: true })
+    .fill("Bicicleta <suave>");
+  await page
+    .getByRole("button", { name: "+ Añadir ejercicio", exact: true })
+    .click();
+  await expect(page.locator(".session-list li")).toHaveCount(3);
+  await expect(page.locator(".session-list")).toContainText(
+    "Bicicleta <suave>",
+  );
+  await page.getByRole("button", { name: "Ajustes", exact: false }).click();
+  const pending = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Exportar JSON", exact: true })
+    .click();
+  const download = await pending;
+  const file = await download.path();
+  await page.locator("#import").setInputFiles(file);
+  await expect(page.locator("#toast")).toContainText("Copia combinada");
+  await page.getByRole("button", { name: "Hoy", exact: false }).click();
+  await expect(page.locator(".session-list li")).toHaveCount(3);
+});
