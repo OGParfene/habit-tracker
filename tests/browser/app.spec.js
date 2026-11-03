@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { defaults, localDate, shift, recordKey } from "../../core.js";
 test("daily logging persists, undo works, numeric partial differs from completion", async ({
   page,
 }) => {
@@ -59,8 +60,11 @@ test("detail modal does not duplicate main click handlers; custom habits and his
     page.getByRole("button", { name: "Completar Estirar", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Historial", exact: false }).click();
-  await expect(page.locator("tbody tr")).toHaveCount(14);
-  await page.locator("tbody tr").nth(1).locator("button").first().click();
+  await expect(
+    page.getByRole("region", { name: "Calendario del historial" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Mes anterior", exact: true }).click();
+  await page.getByRole("button", { name: "Editar día", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Ir a hoy", exact: true }),
   ).toBeVisible();
@@ -81,7 +85,7 @@ test("legacy migration preserves original and stats render without errors", asyn
   await expect(
     page.getByRole("heading", { name: "Mira cuánto has avanzado." }),
   ).toBeVisible();
-  await expect(page.locator(".heatmap")).toHaveCount(5);
+  await expect(page.locator(".progress-card")).toHaveCount(5);
   await expect
     .poll(() =>
       page.evaluate(
@@ -208,4 +212,147 @@ test("legacy workouts and custom activity names survive export and import", asyn
   await expect(page.locator("#toast")).toContainText("Copia combinada");
   await page.getByRole("button", { name: "Hoy", exact: false }).click();
   await expect(page.locator(".session-list li")).toHaveCount(3);
+});
+function reportFixture() {
+  const date = localDate();
+  const rows = Object.fromEntries(
+    defaults(shift(date, -60)).map((h) => [
+      `habit/${h.id}`,
+      { value: h, updatedAt: new Date().toISOString() },
+    ]),
+  );
+  for (const [d, id, value] of [
+    [date, "reading", { status: "done", amount: 15 }],
+    [shift(date, -10), "reading", { status: "done", amount: 30 }],
+    [date, "steps", { status: "done", amount: 8200 }],
+    [shift(date, -1), "steps", { status: "done", amount: 900 }],
+    [
+      date,
+      "exercise",
+      {
+        status: "done",
+        sessions: [
+          { id: "one", sport: "Fuerza", minutes: 30 },
+          { id: "two", sport: "Cardio", minutes: 15 },
+        ],
+        sports: ["Fuerza", "Cardio"],
+        minutes: 45,
+      },
+    ],
+  ])
+    rows[recordKey(d, id)] = { value, updatedAt: new Date().toISOString() };
+  return rows;
+}
+test("progress explains real quantities and individual details follow the selected period", async ({
+  page,
+}) => {
+  await page.addInitScript(
+    (rows) => localStorage.setItem("rhythm-v2", JSON.stringify(rows)),
+    reportFixture(),
+  );
+  await page.goto("/#progress");
+  await page.getByRole("button", { name: "7 días", exact: true }).click();
+  const reading = page.locator('[data-progress-habit="reading"]');
+  await expect(reading.locator(".progress-value")).toHaveText("15 min");
+  await expect(reading).toContainText("Total anotado en 1 día");
+  await expect(page.locator('[data-progress-habit="exercise"]')).toContainText(
+    "2 actividades",
+  );
+  await expect(page.locator('[data-progress-habit="exercise"]')).toContainText(
+    "45 min anotados",
+  );
+  await expect(page.locator("main")).not.toContainText("cobertura");
+  await reading
+    .getByRole("button", { name: "Ver detalle →", exact: true })
+    .click();
+  await expect(page.locator("#detail-content .progress-value")).toHaveText(
+    "15 min",
+  );
+  await expect(page.locator("#detail-content")).toContainText("ÚLTIMOS 7 DÍAS");
+  await expect(page.locator(".detail-breakdown")).toContainText(
+    "Sin registrar",
+  );
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page.getByRole("button", { name: "30 días", exact: true }).click();
+  await expect(
+    page.locator('[data-progress-habit="reading"] .progress-value'),
+  ).toHaveText("45 min");
+});
+test("history previews days, edits one explicitly and returns without losing records", async ({
+  page,
+}) => {
+  await page.addInitScript(
+    (rows) => localStorage.setItem("rhythm-v2", JSON.stringify(rows)),
+    reportFixture(),
+  );
+  await page.goto("/#history");
+  await expect(page.locator(".day-records")).toContainText(
+    "Fuerza · 30 min / Cardio · 15 min",
+  );
+  await page.getByRole("button", { name: "Editar día", exact: true }).click();
+  await page
+    .getByRole("spinbutton", { name: "Lectura en min", exact: true })
+    .fill("20");
+  await page
+    .locator('[data-amount="reading"]')
+    .getByRole("button", { name: "Guardar", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Volver al historial", exact: true })
+    .click();
+  await expect(page.locator(".day-records")).toContainText(
+    "20 min · objetivo cumplido",
+  );
+  await expect(page.locator(".day-records")).toContainText(
+    "Fuerza · 30 min / Cardio · 15 min",
+  );
+  await page.locator(".calendar-dates button:not(:disabled)").first().click();
+  await expect(page).toHaveURL(/#history$/);
+  await expect(page.locator(".day-detail")).toBeVisible();
+});
+test("mobile form controls stay at least 16px without disabling manual zoom", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const small = async () =>
+    page
+      .locator("input:not([type=checkbox]):not([type=radio]),select,textarea")
+      .evaluateAll((elements) =>
+        elements
+          .filter(
+            (el) =>
+              el.getBoundingClientRect().width > 0 &&
+              parseFloat(getComputedStyle(el).fontSize) < 16,
+          )
+          .map((el) => el.id || el.name),
+      );
+  expect(await small()).toEqual([]);
+  const viewport = await page
+    .locator("meta[name=viewport]")
+    .getAttribute("content");
+  expect(viewport).not.toMatch(/user-scalable=no|maximum-scale=1/);
+  await page
+    .getByRole("spinbutton", { name: "Lectura en min", exact: true })
+    .fill("10");
+  await page
+    .locator('[data-amount="reading"]')
+    .getByRole("button", { name: "Guardar", exact: true })
+    .click();
+  expect(
+    await page.evaluate(() =>
+      ["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName),
+    ),
+  ).toBe(false);
+  await page.getByRole("button", { name: "Ajustes", exact: false }).click();
+  expect(await small()).toEqual([]);
+  await page.getByRole("button", { name: "+ Añadir", exact: true }).click();
+  expect(await small()).toEqual([]);
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page.getByRole("button", { name: "Historial", exact: false }).click();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });

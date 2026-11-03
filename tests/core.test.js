@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  habitReport,
   exerciseSessions,
   withExerciseSessions,
   localDate,
@@ -180,4 +181,43 @@ test("backup rejects malformed workout lists", () => {
       },
     }),
   );
+});
+test("readable reports share one range and keep unknown, partial and rest separate", () => {
+  const rows = rowsOf({
+    "2026-01-01": { status: "done", amount: 15 },
+    "2026-01-02": { status: "done", amount: 5 },
+    "2026-01-03": { status: "rest" },
+    "2026-01-04": { status: "miss" },
+    "2026-01-06": { status: "done", amount: 40 },
+  });
+  const r = habitReport(h, rows, "2026-01-01", "2026-01-05");
+  assert.equal(r.amount, 20);
+  assert.equal(r.days, 5);
+  assert.equal(r.done, 1);
+  assert.equal(r.partial, 1);
+  assert.equal(r.rest, 1);
+  assert.equal(r.unknown, 1);
+  assert.equal(r.miss, 1);
+  assert.equal(r.measuredDays, 2);
+  assert.equal(r.done + r.partial + r.rest + r.unknown + r.miss, r.days);
+});
+test("weekly report excludes partial and inactive weeks instead of comparing them with full targets", () => {
+  const exercise = defaults("2026-01-06")[0];
+  const r = habitReport(exercise, {}, "2026-01-01", "2026-01-21");
+  assert.equal(r.weekResults.length, 1);
+  assert.equal(r.weekResults[0].start, "2026-01-12");
+  assert.equal(r.weekResults[0].target, 3);
+});
+test("workout report separates activities, days with activities, goal days and accumulated duration", () => {
+  const exercise = defaults("2026-01-01")[0];
+  const e = withExerciseSessions({ status: "done" }, [
+    { id: "a", sport: "Fuerza", minutes: 30 },
+    { id: "b", sport: "Cardio", minutes: 15 },
+  ]);
+  const rows = { [recordKey("2026-01-01", "exercise")]: { value: e } };
+  const r = habitReport(exercise, rows, "2026-01-01", "2026-01-02");
+  assert.equal(r.activities, 2);
+  assert.equal(r.activityDays, 1);
+  assert.equal(r.done, 1);
+  assert.equal(r.minutes, 45);
 });
