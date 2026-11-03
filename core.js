@@ -79,6 +79,36 @@ export function at(h, date) {
 }
 export const recordKey = (date, id) => `entry/${date}/${id}`;
 export const entry = (rows, date, id) => rows[recordKey(date, id)]?.value;
+// Read old sports/minutes records without assigning the total to every sport.
+export function exerciseSessions(record) {
+  if (Array.isArray(record?.sessions)) return record.sessions;
+  const sports = record?.sports?.length
+    ? record.sports
+    : record?.minutes > 0
+      ? ["Actividad"]
+      : [];
+  return sports.map((sport, index) => ({
+    id: `legacy-${index}`,
+    sport,
+    minutes: sports.length === 1 && record.minutes > 0 ? record.minutes : null,
+  }));
+}
+export function withExerciseSessions(record, sessions) {
+  const unallocatedMinutes =
+    record?.unallocatedMinutes ??
+    (!Array.isArray(record?.sessions) && record?.sports?.length > 1
+      ? record.minutes || 0
+      : 0);
+  return {
+    ...record,
+    unallocatedMinutes,
+    sessions,
+    sports: [...new Set(sessions.map((s) => s.sport))],
+    minutes:
+      unallocatedMinutes +
+      sessions.reduce((sum, s) => sum + (s.minutes || 0), 0),
+  };
+}
 export function achieved(h, e) {
   return (
     !!e &&
@@ -275,10 +305,34 @@ export function validateBackup(input) {
         (v.rating !== undefined &&
           (!Number.isInteger(v.rating) || v.rating < 0 || v.rating > 3)) ||
         (v.minutes !== undefined &&
-          (!Number.isFinite(v.minutes) || v.minutes < 0 || v.minutes > 1440)) ||
+          (!Number.isFinite(v.minutes) ||
+            v.minutes < 0 ||
+            v.minutes > 72000)) ||
+        (v.unallocatedMinutes !== undefined &&
+          (!Number.isFinite(v.unallocatedMinutes) ||
+            v.unallocatedMinutes < 0 ||
+            v.unallocatedMinutes > 72000)) ||
+        (v.sessions !== undefined &&
+          (!Array.isArray(v.sessions) ||
+            v.sessions.length > 50 ||
+            v.sessions.some(
+              (session) =>
+                !session ||
+                typeof session.id !== "string" ||
+                !/^[a-zA-Z0-9-]{1,80}$/.test(session.id) ||
+                typeof session.sport !== "string" ||
+                !session.sport.trim() ||
+                session.sport.length > 80 ||
+                (session.minutes !== null &&
+                  (!Number.isFinite(session.minutes) ||
+                    session.minutes < 0 ||
+                    session.minutes > 1440)),
+            ) ||
+            new Set(v.sessions.map((session) => session.id)).size !==
+              v.sessions.length)) ||
         (v.sports !== undefined &&
           (!Array.isArray(v.sports) ||
-            v.sports.length > 30 ||
+            v.sports.length > 50 ||
             v.sports.some((s) => typeof s !== "string" || s.length > 80))))
     )
       throw Error("Registro no válido.");

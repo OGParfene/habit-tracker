@@ -5,7 +5,7 @@ Un espacio personal para registrar hábitos, retomar después de una pausa y ent
 ## Incluye
 
 - Hoy: registro con un toque, cantidades reales, avances parciales, descansos y deshacer.
-- Ejercicio con objetivo semanal, deporte y duración. Creatina, pasos, lectura y alimentación como hábitos iniciales editables.
+- Ejercicio con objetivo semanal y múltiples actividades por día, cada una con duración opcional, eliminación y deshacer. Puedes añadir actividades después de completar el hábito sin contarlo varias veces. Los deportes históricos se conservan. Creatina, pasos, lectura y alimentación como hábitos iniciales editables.
 - Hábitos personalizados, objetivos diarios o semanales, archivo y cambios efectivos desde hoy conservando objetivos anteriores.
 - Historial editable de 14 días, selector para navegar a cualquier fecha pasada y notas diarias.
 - Progreso por 7/30/90/365 días, mapas de constancia, tendencias semanales, cobertura, rachas y acumulados.
@@ -60,3 +60,7 @@ Los registros se guardan en `rhythm-v2` sin cuenta y `rhythm-v2-<user-id>` con c
 ## Límites
 
 Los recordatorios son eventos de calendario, no push de la web. No hay lectura automática de Apple Health/Google Fit. La sincronización requiere configurar y probar el proyecto Supabase y el correo. El almacenamiento local depende del navegador: exporta copias periódicas. La sincronización no elimina las copias ya descargadas o guardadas en otros dispositivos.
+
+## Identidad visual
+
+Monograma vectorial P de Parfene, con un trazo continuo y un punto que representa el siguiente paso. Base marfil e índigo; terracota para ejercicio, turquesa para caminar, azul para lectura, violeta para creatina y frambuesa para alimentación. Son asociaciones visuales para identificar las actividades y dar coherencia, sin promesas de efectos psicológicos. El logo está en `public/icon.svg` y se publica también como favicon y símbolo de la aplicación.

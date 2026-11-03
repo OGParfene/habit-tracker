@@ -1,12 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
 :root {
   font-family: "DM Sans", system-ui, sans-serif;
-  color: #28362e;
-  background: #f8f9f5;
+  color: #293047;
+  background: #f7f6f2;
   font-synthesis: none;
-  --muted: #707c73;
-  --green: #366449;
-  --line: #e4e8df;
+  --muted: #6d7081;
+  --green: #333d64;
+  --line: #e5e5ec;
 }
 * {
   box-sizing: border-box;
@@ -79,7 +79,7 @@ a {
   place-items: center;
   width: 42px;
   height: 42px;
-  background: var(--green);
+  background: transparent;
   color: white;
   border-radius: 14px;
   font-size: 28px;
@@ -114,8 +114,8 @@ nav button span {
   font-weight: 600;
 }
 nav button.active {
-  background: #e6eddf;
-  color: #34523c;
+  background: #eeedf5;
+  color: #414d7c;
 }
 .sidebar-bottom {
   margin-top: auto;
@@ -189,8 +189,8 @@ h3 {
 }
 .hero {
   padding: 25px 28px;
-  background: #eaf0e3;
-  border: 1px solid #dfe7d5;
+  background: #eeedf6;
+  border: 1px solid #deddec;
   border-radius: 18px;
   display: flex;
   justify-content: space-between;
@@ -203,7 +203,7 @@ h3 {
 .hero p {
   margin: 8px 0 0;
   font-size: 13px;
-  color: #64705d;
+  color: #6d6c80;
 }
 .ring {
   --p: 0;
@@ -211,12 +211,12 @@ h3 {
   width: 75px;
   height: 75px;
   border-radius: 50%;
-  background: conic-gradient(#527044 calc(var(--p) * 1%), #d9e2ce 0);
+  background: conic-gradient(#566494 calc(var(--p) * 1%), #dadbec 0);
   display: grid;
   place-items: center;
 }
 .ring span {
-  background: #eaf0e3;
+  background: #eeedf6;
   border-radius: 50%;
   width: 59px;
   height: 59px;
@@ -242,24 +242,28 @@ h3 {
   background: #fff;
   padding: 20px;
   margin-bottom: 12px;
-  --accent: #a66e3c;
-  --pale: #f6ede3;
+  --accent: #a34d2e;
+  --pale: #fbede4;
 }
-.habit.green {
-  --accent: #508063;
-  --pale: #edf3e9;
+.habit.green,
+.habit-palette.green {
+  --accent: #20746d;
+  --pale: #e8f4f0;
 }
-.habit.blue {
-  --accent: #5e7c9e;
-  --pale: #ebf1f8;
+.habit.blue,
+.habit-palette.blue {
+  --accent: #4569a6;
+  --pale: #ebf0fa;
 }
-.habit.purple {
-  --accent: #8a70a1;
-  --pale: #f1edf6;
+.habit.purple,
+.habit-palette.purple {
+  --accent: #73559c;
+  --pale: #f0ebf8;
 }
-.habit.pink {
-  --accent: #ad7380;
-  --pale: #f8edf0;
+.habit.pink,
+.habit-palette.pink {
+  --accent: #a04668;
+  --pale: #f8ebf0;
 }
 .habit-top {
   display: flex;
@@ -299,13 +303,13 @@ h3 {
   border: 1.5px solid #dfe4da;
   border-radius: 50%;
   background: white;
-  color: #87937f;
+  color: #7c8092;
   font-size: 21px;
 }
 .check.done {
-  background: var(--green);
+  background: var(--accent);
   color: white;
-  border-color: var(--green);
+  border-color: var(--accent);
 }
 .week {
   display: flex;
@@ -314,11 +318,11 @@ h3 {
   align-items: center;
 }
 .week button {
-  width: 23px;
-  height: 23px;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
   background: #f0f2ec;
-  color: #5f7058;
+  color: #667087;
   font-size: 10px;
   padding: 0;
   border: 1px solid transparent;
@@ -423,15 +427,15 @@ h3 {
 }
 .day-dot i {
   font-style: normal;
-  width: 23px;
-  height: 23px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #f0f2eb;
+  background: #f0eff6;
 }
 .day-dot i.done {
-  background: #658259;
+  background: #596b9c;
   color: white;
 }
 .big-number {
@@ -450,12 +454,12 @@ h3 {
 .bar i {
   height: 100%;
   display: block;
-  background: #849a6b;
+  background: #64739e;
   border-radius: 10px;
 }
 .note {
-  background: #f1efe4;
-  border: 1px solid #e8e4d4;
+  background: #f5f0e8;
+  border: 1px solid #e9dfd2;
 }
 .note textarea {
   background: #faf9f4;
@@ -508,7 +512,7 @@ h3 {
   padding: 0;
 }
 .heatmap button.done {
-  background: #658259;
+  background: #596b9c;
 }
 .heatmap button.partial {
   background: #c4d2b4;
@@ -534,7 +538,7 @@ h3 {
   display: inline-block;
   width: 9px;
   height: 9px;
-  background: #658259;
+  background: #596b9c;
   border-radius: 2px;
   margin-right: 4px;
 }
@@ -599,7 +603,7 @@ td button {
 .chart i {
   display: block;
   width: 65%;
-  background: #a8b995;
+  background: #8a97bb;
   border-radius: 5px 5px 0 0;
   min-height: 2px;
 }
@@ -664,7 +668,7 @@ dialog h2 {
   bottom: 25px;
   left: 50%;
   transform: translateX(-50%);
-  background: #293f30;
+  background: #333d64;
   color: white;
   border-radius: 12px;
   padding: 13px 20px;
@@ -672,7 +676,7 @@ dialog h2 {
   z-index: 5;
   display: none;
   max-width: 90%;
-  box-shadow: 0 6px 30px #213b3222;
+  box-shadow: 0 6px 30px #333d6422;
 }
 #toast.show {
   display: flex;
@@ -771,7 +775,7 @@ footer {
     left: 0;
     right: 0;
     z-index: 3;
-    background: #f8f9f5f5;
+    background: #f7f6f2f5;
     backdrop-filter: blur(12px);
     height: auto;
     padding: 7px 12px calc(7px + env(safe-area-inset-bottom));
@@ -864,5 +868,424 @@ footer {
     scroll-behavior: auto !important;
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* Identity: quiet indigo foundation, with a distinct accent for each habit. */
+body {
+  background:
+    radial-gradient(ellipse at 100% 0%, #eeedf580, transparent 45%), #f7f6f2;
+}
+.sidebar {
+  background: #faf9f6;
+}
+.brand {
+  color: #303958;
+  letter-spacing: -1.05px;
+}
+.brand-icon img {
+  display: block;
+  width: 44px;
+  height: 44px;
+}
+.brand small {
+  font-size: 8px;
+  letter-spacing: 1.8px;
+}
+nav svg {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+}
+nav button {
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+nav button.active {
+  box-shadow: inset 3px 0 #52618d;
+}
+.brand-signature {
+  height: 30px;
+  display: flex;
+  align-items: end;
+  gap: 5px;
+  margin-bottom: 18px;
+}
+.brand-signature span {
+  width: 5px;
+  height: 11px;
+  border-radius: 5px;
+  background: #cbcbdc;
+}
+.brand-signature span:nth-child(2) {
+  height: 18px;
+  background: #929bb9;
+}
+.brand-signature span:nth-child(3) {
+  height: 26px;
+  background: #d6a177;
+}
+h1 {
+  color: #303750;
+  font-weight: 700;
+}
+.hero {
+  background: linear-gradient(115deg, #eeedf6, #f5f2ee);
+  border-color: #e0dfe9;
+  box-shadow: 0 5px 18px #383c6004;
+  position: relative;
+}
+.hero .eyebrow {
+  color: #737995;
+}
+.hero h2 {
+  color: #363f62;
+  margin-top: 4px;
+}
+.hero .ring {
+  box-shadow: 0 0 0 6px #ffffff65;
+}
+.hero .ring span {
+  color: #3f4c76;
+}
+.habit {
+  border-color: #e6e5eb;
+  box-shadow: 0 2px 6px #30395803;
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s;
+}
+.habit::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 24px;
+  height: 29px;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0.7;
+  border-radius: 0 3px 3px 0;
+}
+.habit:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, #e6e5eb);
+  box-shadow: 0 5px 18px #30395807;
+}
+.habit.is-complete {
+  background: linear-gradient(110deg, #fff 60%, var(--pale));
+  border-color: color-mix(in srgb, var(--accent) 22%, #e6e5eb);
+}
+.habit-icon {
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.habit-icon svg {
+  width: 23px;
+  height: 23px;
+}
+.habit .check {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 25%, #e6e5eb);
+  transition:
+    background 0.18s,
+    color 0.18s,
+    transform 0.18s;
+}
+.habit .check:hover {
+  background: var(--pale);
+  transform: scale(1.04);
+}
+.habit .check.done {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.habit .small-btn {
+  background: var(--pale);
+  color: var(--accent);
+}
+.habit .small-btn[aria-pressed="true"] {
+  background: var(--accent);
+  color: white;
+  box-shadow: none;
+}
+.habit .text-button {
+  color: var(--accent);
+}
+.habit .entry-controls:last-child {
+  gap: 3px;
+  margin-top: 10px;
+}
+.habit .entry-controls:last-child .text-button {
+  color: #6d7081;
+  font-size: 11px;
+}
+.habit .entry-controls:last-child .text-button[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--pale);
+  border-radius: 8px;
+}
+.week button {
+  background: #f2f2f6;
+  color: #6b7083;
+  flex-shrink: 0;
+}
+.week button.done {
+  background: var(--accent);
+  color: white;
+}
+.week button.selected {
+  outline: 1px solid var(--accent);
+}
+.week span {
+  font-size: 10px;
+}
+.panel {
+  box-shadow: 0 2px 8px #30395803;
+}
+.note {
+  background: linear-gradient(130deg, #f5f0e8, #f9f6f0);
+}
+.milestone {
+  color: #b78152;
+}
+.pill {
+  background: #ffffff65;
+  border-color: #e2e1e9;
+}
+input,
+select,
+textarea {
+  border-color: #e0e1e9;
+}
+.primary {
+  background: #414f7e;
+}
+.secondary {
+  background: #eeedf5;
+  color: #48547b;
+}
+.small-btn {
+  background: #efeff5;
+  color: #4e5879;
+}
+.periods button.active {
+  background: #414f7e;
+  color: white;
+}
+.text-button {
+  color: #4c5c8a;
+}
+.habit-palette {
+  --accent: #a34d2e;
+  --pale: #fbede4;
+}
+.habit-palette .heatmap button.done {
+  background: var(--accent);
+}
+.habit-palette .heatmap button.partial {
+  background: color-mix(in srgb, var(--accent) 35%, white);
+}
+.habit-palette .legend i:not(.blank):not(.miss):not(.rest) {
+  background: var(--accent);
+}
+.habit-palette .pill {
+  background: var(--pale);
+  color: var(--accent);
+  border-color: transparent;
+}
+.exercise-log {
+  margin-top: 18px;
+}
+.session-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #777684;
+  font-size: 10px;
+  margin-bottom: 9px;
+}
+.session-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.session-list li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--pale);
+  border: 1px solid color-mix(in srgb, var(--accent) 9%, transparent);
+  padding: 5px 8px 5px 11px;
+  border-radius: 9px;
+  min-width: 0;
+}
+.session-marker {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.session-name {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  flex: 1;
+}
+.session-time {
+  font-size: 10px;
+  color: #806b60;
+  white-space: nowrap;
+}
+.remove-session {
+  background: transparent;
+  color: #967f71;
+  width: 28px;
+  height: 28px;
+  font-size: 19px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.remove-session:hover {
+  background: #ffffffa0;
+  color: #924528;
+}
+.exercise-form {
+  display: grid;
+  grid-template-columns: minmax(125px, 1.3fr) minmax(105px, 1fr) auto;
+  align-items: end;
+  gap: 9px;
+}
+.exercise-form label {
+  font-size: 10px;
+  color: #74727b;
+}
+.exercise-form input,
+.exercise-form select {
+  width: 100%;
+  font-size: 11px;
+  min-height: 38px;
+}
+.exercise-form .add-exercise {
+  background: var(--pale);
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  height: 38px;
+  padding: 0 11px;
+}
+.exercise-form .custom-sport {
+  grid-column: 1/-1;
+}
+.exercise-form [hidden] {
+  display: none;
+}
+.exercise-hint {
+  font-size: 10px;
+  color: #746d76;
+  margin: 9px 0 0;
+  line-height: 1.6;
+}
+.mobile-brand {
+  display: none;
+}
+@media (max-width: 650px) {
+  body {
+    background: #f7f6f2;
+  }
+  main {
+    padding-top: 21px;
+  }
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    margin-bottom: 26px;
+    color: #333d64;
+  }
+  .mobile-brand img {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+  .mobile-brand > span {
+    font:
+      700 16px Manrope,
+      system-ui;
+    letter-spacing: -0.6px;
+  }
+  .mobile-brand small {
+    margin-left: auto;
+    font-size: 8px;
+    letter-spacing: 1.1px;
+    color: #9392a0;
+  }
+  .topline {
+    margin-bottom: 23px;
+  }
+  .topline .pill {
+    display: none;
+  }
+  .sidebar {
+    background: #faf9f6f5;
+  }
+  nav svg {
+    width: 20px;
+    height: 20px;
+  }
+  nav button.active {
+    box-shadow: none;
+    background: #eeedf5;
+  }
+  .hero {
+    padding: 19px;
+  }
+  .hero .ring {
+    width: 65px;
+    height: 65px;
+  }
+  .hero .ring span {
+    width: 51px;
+    height: 51px;
+    font-size: 16px;
+  }
+  .habit {
+    padding: 17px;
+  }
+  .habit::before {
+    top: 23px;
+    height: 27px;
+  }
+  .exercise-form {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+  .exercise-form .add-exercise {
+    grid-column: 1/-1;
+    height: 34px;
+  }
+  .exercise-form .custom-sport {
+    grid-row: 2;
+  }
+  .week {
+    gap: 6px;
+  }
+  .week span {
+    font-size: 9px;
+  }
+}
+@media (max-width: 370px) {
+  .week {
+    flex-wrap: wrap;
+  }
+  .week span {
+    width: 100%;
+    margin-top: 5px;
   }
 }
