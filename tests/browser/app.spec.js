@@ -346,6 +346,7 @@ test("mobile form controls stay at least 16px without disabling manual zoom", as
   ).toBe(false);
   await page.getByRole("button", { name: "Ajustes", exact: false }).click();
   expect(await small()).toEqual([]);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await page.getByRole("button", { name: "+ Añadir", exact: true }).click();
   expect(await small()).toEqual([]);
   await page.getByRole("button", { name: "Cerrar", exact: true }).click();

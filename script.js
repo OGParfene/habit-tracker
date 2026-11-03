@@ -144,6 +144,7 @@ function navigate(next) {
   location.hash = view;
   render();
   $("#main").focus({ preventScroll: true });
+  window.scrollTo({ top: 0, behavior: "instant" });
 }
 function dateControls() {
   return `<div class="date-picker"><button class="small-btn" data-shift="-1" aria-label="Día anterior">←</button><input aria-label="Fecha del registro" type="date" id="selected-date" value="${selected}" max="${today()}"><button class="small-btn" data-shift="1" aria-label="Día siguiente" ${selected >= today() ? "disabled" : ""}>→</button>${selected !== today() ? '<button class="text-button" data-today>Ir a hoy</button>' : ""}</div>`;
