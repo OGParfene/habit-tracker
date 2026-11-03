@@ -70,3 +70,9 @@ Monograma vectorial P de Parfene, con un trazo continuo y un punto que represent
 El resumen cuenta días con algún hábito o nota registrados. Cada hábito muestra cantidades reales (pasos, minutos, actividades o valoraciones) y distingue explícitamente completado, parcial, no realizado, descanso y sin registrar. Los registros antiguos sin cantidad no añaden unidades inventadas. Los objetivos semanales se miden en días completados y el listado solo compara semanas completas del periodo. Las rachas se consultan de forma secundaria y se rotulan como calculadas hasta hoy sobre todo el historial.
 
 En móvil, los campos de entrada usan al menos 16 px para evitar el zoom automático de Safari; no se restringe el zoom manual. Al guardar se retira el foco del campo.
+
+## Gráficos del progreso
+
+Cada hábito incorpora una visualización interactiva en la tarjeta y en su detalle. Pasos y lectura muestran cantidades; ejercicio y hábitos sí/no muestran días completados, contando un solo día aunque haya varias actividades. Alimentación usa un gráfico de distribución de las valoraciones anotadas. Toca una barra o enfócala con el teclado para consultar la fecha, cantidad y datos ausentes; también hay una tabla de datos desplegable.
+
+Hasta 31 días se dibujan barras diarias; hasta 100, totales semanales; y para periodos mayores, totales mensuales. Los días sin cantidad se conservan como datos ausentes, diferentes de un cero registrado. Las líneas de objetivo usan la meta histórica del día o de una semana completa; no se inventan objetivos para bloques parciales ni cantidades para marcas antiguas. Los gráficos utilizan SVG local, sin servicios de IA ni nuevos costes o cuentas.
